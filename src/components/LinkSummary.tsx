@@ -20,6 +20,17 @@ const LinkSummary: React.FC<LinkSummaryProps> = ({ links }) => {
     return null;
   }
 
+  // Helper function to remove topic from title if it starts with the topic
+  const cleanTitle = (title: string, topic: string) => {
+    // If title starts with the topic (case insensitive), remove it and trim
+    if (title.toLowerCase().startsWith(topic.toLowerCase())) {
+      const remainingText = title.substring(topic.length).trim();
+      // If there's a separator like "-" or ":" after the topic, remove it too
+      return remainingText.replace(/^[-:]\s*/, '').trim();
+    }
+    return title;
+  };
+
   const generateMarkdownSummary = () => {
     const lines = [
       '# Links mentioned in this episode',
@@ -27,8 +38,9 @@ const LinkSummary: React.FC<LinkSummaryProps> = ({ links }) => {
     ];
     
     checkedLinks.forEach(link => {
+      const cleanedTitle = cleanTitle(link.title, link.topic);
       lines.push(`## ${link.topic}`);
-      lines.push(`[${link.title}](${link.url})`);
+      lines.push(`[${cleanedTitle}](${link.url})`);
       lines.push(`${link.description}`);
       lines.push('');
     });
@@ -43,7 +55,8 @@ const LinkSummary: React.FC<LinkSummaryProps> = ({ links }) => {
     ];
     
     checkedLinks.forEach(link => {
-      lines.push(`${link.topic}: ${link.title}`);
+      const cleanedTitle = cleanTitle(link.title, link.topic);
+      lines.push(`${link.topic}: ${cleanedTitle}`);
       lines.push(`  ${link.url}`);
       lines.push(`  ${link.description}`);
       lines.push('');
@@ -59,8 +72,9 @@ const LinkSummary: React.FC<LinkSummaryProps> = ({ links }) => {
     ];
     
     checkedLinks.forEach(link => {
+      const cleanedTitle = cleanTitle(link.title, link.topic);
       lines.push(`  <li>`);
-      lines.push(`    <strong>${link.topic}</strong>: <a href="${link.url}" target="_blank">${link.title}</a>`);
+      lines.push(`    <strong>${link.topic}</strong>: <a href="${link.url}" target="_blank">${cleanedTitle}</a>`);
       lines.push(`    <p>${link.description}</p>`);
       lines.push(`  </li>`);
     });
@@ -79,7 +93,7 @@ const LinkSummary: React.FC<LinkSummaryProps> = ({ links }) => {
             <h2>{link.topic}</h2>
             <p>
               <a href={link.url} target="_blank" rel="noreferrer" className="font-medium underline">
-                {link.title}
+                {cleanTitle(link.title, link.topic)}
               </a>
             </p>
             <p>{link.description}</p>
