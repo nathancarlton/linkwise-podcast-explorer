@@ -1,19 +1,21 @@
-
 import { ProcessedTopic } from '../types';
 
 // Process transcript and extract topics using OpenAI
-export const processTranscript = async (transcript: string, apiKey?: string): Promise<string[]> => {
+export const processTranscript = async (transcript: string, apiKey?: string): Promise<{ topics: string[], usedMockData: boolean }> => {
   console.log('Processing transcript of length:', transcript.length);
   
   if (!apiKey || apiKey.trim() === '') {
+    console.warn('No API key provided, using mock data');
     // If no API key or empty API key, return mock data for demonstration
-    return mockProcessTranscript(transcript);
+    const mockTopics = await mockProcessTranscript(transcript);
+    return { topics: mockTopics, usedMockData: true };
   }
   
   // Validate API key format
   if (!apiKey.startsWith('sk-') || apiKey.length < 20) {
     console.error('Invalid API key format');
-    return mockProcessTranscript(transcript);
+    const mockTopics = await mockProcessTranscript(transcript);
+    return { topics: mockTopics, usedMockData: true };
   }
   
   try {
@@ -43,34 +45,39 @@ export const processTranscript = async (transcript: string, apiKey?: string): Pr
     if (!response.ok) {
       const errorData = await response.json();
       console.error('OpenAI API error:', errorData);
-      throw new Error(`API error: ${response.status}`);
+      const mockTopics = await mockProcessTranscript(transcript);
+      return { topics: mockTopics, usedMockData: true };
     }
 
     const data = await response.json();
     const topics = JSON.parse(data.choices[0].message.content).topics;
     
     console.log('Extracted topics:', topics);
-    return topics;
+    return { topics, usedMockData: false };
   } catch (error) {
     console.error('Error extracting topics:', error);
     // Fallback to mock data if API call fails
-    return mockProcessTranscript(transcript);
+    const mockTopics = await mockProcessTranscript(transcript);
+    return { topics: mockTopics, usedMockData: true };
   }
 };
 
 // Find links for the extracted topics using OpenAI
-export const findLinksForTopics = async (topics: string[], apiKey?: string): Promise<ProcessedTopic[]> => {
+export const findLinksForTopics = async (topics: string[], apiKey?: string): Promise<{ processedTopics: ProcessedTopic[], usedMockData: boolean }> => {
   console.log('Finding links for topics:', topics);
   
   if (!apiKey || apiKey.trim() === '') {
+    console.warn('No API key provided, using mock data');
     // If no API key or empty API key, return mock data for demonstration
-    return mockFindLinksForTopics(topics);
+    const mockTopics = await mockFindLinksForTopics(topics);
+    return { processedTopics: mockTopics, usedMockData: true };
   }
   
   // Validate API key format
   if (!apiKey.startsWith('sk-') || apiKey.length < 20) {
     console.error('Invalid API key format');
-    return mockFindLinksForTopics(topics);
+    const mockTopics = await mockFindLinksForTopics(topics);
+    return { processedTopics: mockTopics, usedMockData: true };
   }
   
   try {
@@ -100,17 +107,19 @@ export const findLinksForTopics = async (topics: string[], apiKey?: string): Pro
     if (!response.ok) {
       const errorData = await response.json();
       console.error('OpenAI API error:', errorData);
-      throw new Error(`API error: ${response.status}`);
+      const mockTopics = await mockFindLinksForTopics(topics);
+      return { processedTopics: mockTopics, usedMockData: true };
     }
 
     const data = await response.json();
     const processedTopics = JSON.parse(data.choices[0].message.content).topics;
     
-    return processedTopics;
+    return { processedTopics, usedMockData: false };
   } catch (error) {
     console.error('Error finding links:', error);
     // Fallback to mock data if API call fails
-    return mockFindLinksForTopics(topics);
+    const mockTopics = await mockFindLinksForTopics(topics);
+    return { processedTopics: mockTopics, usedMockData: true };
   }
 };
 

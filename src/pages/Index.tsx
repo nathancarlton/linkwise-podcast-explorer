@@ -18,6 +18,7 @@ const Index = () => {
   const [processingStage, setProcessingStage] = useState<ProcessingStage>(ProcessingStage.Initial);
   const [links, setLinks] = useState<LinkItem[]>([]);
   const [apiKey, setApiKey] = useState<string>('');
+  const [usedMockData, setUsedMockData] = useState<boolean>(false);
   
   const handleApiKeySave = (key: string) => {
     setApiKey(key);
@@ -28,9 +29,10 @@ const Index = () => {
       // Start processing
       setProcessingStage(ProcessingStage.ProcessingTranscript);
       setLinks([]);
+      setUsedMockData(false);
       
       // Extract topics from transcript
-      const topics = await processTranscript(transcript, apiKey);
+      const { topics, usedMockData: usedMockForTopics } = await processTranscript(transcript, apiKey);
       
       if (topics.length === 0) {
         toast.error('No relevant topics found in the transcript');
@@ -40,7 +42,10 @@ const Index = () => {
       
       // Find links for the extracted topics
       setProcessingStage(ProcessingStage.FindingLinks);
-      const processedTopics = await findLinksForTopics(topics, apiKey);
+      const { processedTopics, usedMockData: usedMockForLinks } = await findLinksForTopics(topics, apiKey);
+      
+      // Set whether mock data was used
+      setUsedMockData(usedMockForTopics || usedMockForLinks);
       
       // Convert processed topics to link items
       const linkItems = processTopicsToLinkItems(processedTopics);
@@ -49,7 +54,11 @@ const Index = () => {
       setProcessingStage(ProcessingStage.Complete);
       
       if (linkItems.length > 0) {
-        toast.success(`Found ${linkItems.length} links across ${processedTopics.length} topics`);
+        if (usedMockForTopics || usedMockForLinks) {
+          toast.warning('Generated example links - API key may be invalid');
+        } else {
+          toast.success(`Found ${linkItems.length} links across ${processedTopics.length} topics`);
+        }
       } else {
         toast.error('No links found for the extracted topics');
       }
@@ -64,6 +73,7 @@ const Index = () => {
     try {
       setProcessingStage(ProcessingStage.FindingLinks);
       setLinks([]);
+      setUsedMockData(false);
       
       // Parse user-provided links
       const processedTopics = parseUserProvidedLinks(linksText);
@@ -147,6 +157,7 @@ const Index = () => {
             <LinksList 
               links={links}
               onLinkToggle={handleLinkToggle}
+              usedMockData={usedMockData}
             />
             
             <LinkSummary links={links} />
