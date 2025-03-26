@@ -277,7 +277,7 @@ export const findLinksForTopics = async (topics: string[], apiKey?: string): Pro
           }
           
           try {
-            // Perform server-side URL validation
+            // Use our improved URL validation with caching
             const isValid = await validateUrl(link.url);
             if (isValid) {
               verifiedLinks.push(link);

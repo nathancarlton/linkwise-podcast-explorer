@@ -1,6 +1,7 @@
 
 import axios from 'axios';
 import { isValidUrl } from './urlValidator';
+import { supabase } from "@/integrations/supabase/client";
 
 // URL validation function that focuses on format and trusted domains
 export const validateUrl = async (url: string): Promise<boolean> => {
@@ -51,10 +52,25 @@ export const validateUrl = async (url: string): Promise<boolean> => {
                          '.us', '.uk', '.ca', '.au', '.eu', '.de', '.fr', '.jp', '.cn', '.in'];
       
       if (validTLDs.some(tld => domain.endsWith(tld))) {
-        // For non-trusted domains with valid TLDs, we'll accept them without making HTTP requests
-        // as browser CORS policies prevent us from validating many legitimate URLs
-        console.log(`URL passes domain validation: ${url}`);
-        return true;
+        // For domains with valid TLDs, use our caching validation endpoint
+        try {
+          // Using the Supabase Edge Function for validation
+          const { data, error } = await supabase.functions.invoke('validate-url', {
+            body: { url }
+          });
+          
+          if (error) {
+            console.warn(`Edge function error validating URL: ${url}`, error);
+            // Fall back to trusting it if our validation service fails
+            return true;
+          }
+          
+          return data.isValid;
+        } catch (e) {
+          console.warn(`Error calling URL validation service for ${url}:`, e);
+          // Fall back to trusting it if our validation service fails
+          return true;
+        }
       }
       
       console.warn(`URL fails domain validation: ${url}`);
