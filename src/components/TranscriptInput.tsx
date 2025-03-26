@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { ProcessingStage } from '@/types';
+import { Loader2 } from 'lucide-react';
 
 interface TranscriptInputProps {
   onProcess: (transcript: string) => void;
@@ -62,8 +63,8 @@ const TranscriptInput: React.FC<TranscriptInputProps> = ({
           className="relative overflow-hidden group"
         >
           {isDisabled ? (
-            <div className="flex items-center">
-              <div className="spinner mr-2 w-4 h-4"></div>
+            <div className="flex items-center gap-2">
+              <Loader2 className="h-4 w-4 animate-spin" />
               <span>
                 {processingStage === ProcessingStage.ProcessingTranscript
                   ? 'Finding Topics'
