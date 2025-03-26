@@ -5,6 +5,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import { LinkItem } from '@/types';
+import { ExternalLink } from 'lucide-react';
 
 interface LinksListProps {
   links: LinkItem[];
@@ -33,7 +34,7 @@ const LinksList: React.FC<LinksListProps> = ({ links, onLinkToggle }) => {
                     onCheckedChange={(checked) => onLinkToggle(link.id, !!checked)} 
                     className="mt-1"
                   />
-                  <div>
+                  <div className="flex-1">
                     <label 
                       htmlFor={link.id} 
                       className="font-medium text-lg cursor-pointer hover:text-primary transition-colors"
@@ -47,9 +48,10 @@ const LinksList: React.FC<LinksListProps> = ({ links, onLinkToggle }) => {
                           href={link.url} 
                           target="_blank" 
                           rel="noopener noreferrer" 
-                          className="text-blue-500 hover:text-blue-700 ml-2 underline"
+                          className="flex items-center text-blue-500 hover:text-blue-700 ml-2 underline group mt-1 w-fit"
                         >
-                          {link.url}
+                          <span className="truncate max-w-[300px]">{link.url}</span>
+                          <ExternalLink className="ml-1 h-3 w-3 opacity-70 group-hover:opacity-100 transition-opacity" />
                         </a>
                       </div>
                       <p className="text-sm text-muted-foreground mt-1">

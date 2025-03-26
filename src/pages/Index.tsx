@@ -4,6 +4,7 @@ import { v4 as uuidv4 } from 'uuid';
 import TranscriptInput from '@/components/TranscriptInput';
 import LinksList from '@/components/LinksList';
 import LinkSummary from '@/components/LinkSummary';
+import ApiKeyInput from '@/components/ApiKeyInput';
 import { Separator } from '@/components/ui/separator';
 import { processTranscript, findLinksForTopics } from '@/utils/transcriptProcessor';
 import { LinkItem, ProcessingStage, ProcessedTopic } from '@/types';
@@ -12,6 +13,11 @@ import { toast } from 'sonner';
 const Index = () => {
   const [processingStage, setProcessingStage] = useState<ProcessingStage>(ProcessingStage.Initial);
   const [links, setLinks] = useState<LinkItem[]>([]);
+  const [apiKey, setApiKey] = useState<string>('');
+  
+  const handleApiKeySave = (key: string) => {
+    setApiKey(key);
+  };
 
   const handleProcessTranscript = async (transcript: string) => {
     try {
@@ -20,7 +26,7 @@ const Index = () => {
       setLinks([]);
       
       // Extract topics from transcript
-      const topics = await processTranscript(transcript);
+      const topics = await processTranscript(transcript, apiKey);
       
       if (topics.length === 0) {
         toast.error('No relevant topics found in the transcript');
@@ -30,7 +36,7 @@ const Index = () => {
       
       // Find links for the extracted topics
       setProcessingStage(ProcessingStage.FindingLinks);
-      const processedTopics = await findLinksForTopics(topics);
+      const processedTopics = await findLinksForTopics(topics, apiKey);
       
       // Convert processed topics to link items
       const linkItems: LinkItem[] = [];
@@ -88,6 +94,8 @@ const Index = () => {
       </header>
       
       <main className="w-full max-w-4xl">
+        <ApiKeyInput onApiKeySave={handleApiKeySave} />
+        
         <TranscriptInput 
           onProcess={handleProcessTranscript} 
           processingStage={processingStage}

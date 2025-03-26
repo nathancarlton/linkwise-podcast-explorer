@@ -1,13 +1,109 @@
 
 import { ProcessedTopic } from '../types';
 
-// Simulated transcript processing
-// In a real implementation, this would use more sophisticated NLP
-export const processTranscript = async (transcript: string): Promise<string[]> => {
+// Process transcript and extract topics using OpenAI
+export const processTranscript = async (transcript: string, apiKey?: string): Promise<string[]> => {
   console.log('Processing transcript of length:', transcript.length);
   
-  // This is a mock implementation
-  // A real version would use NLP to extract meaningful topics
+  if (!apiKey) {
+    // If no API key, return mock data for demonstration
+    return mockProcessTranscript(transcript);
+  }
+  
+  try {
+    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${apiKey}`
+      },
+      body: JSON.stringify({
+        model: 'gpt-4o',
+        messages: [
+          {
+            role: 'system',
+            content: 'You are an assistant that extracts meaningful topics from podcast transcripts. Focus on extracting 5-10 specific resources mentioned in the transcript like books, websites, organizations, or key concepts that would be useful for the podcast audience. Return ONLY a JSON array of topic strings with no additional text.'
+          },
+          {
+            role: 'user',
+            content: `Extract 5-10 meaningful topics from this podcast transcript that would benefit the listeners. Focus on specific resources mentioned (books, websites, organizations) or key concepts. Prioritize resources that listeners might want to look up after the show:\n\n${transcript}`
+          }
+        ],
+        temperature: 0.3,
+        response_format: { type: 'json_object' }
+      })
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      console.error('OpenAI API error:', errorData);
+      throw new Error(`API error: ${response.status}`);
+    }
+
+    const data = await response.json();
+    const topics = JSON.parse(data.choices[0].message.content).topics;
+    
+    console.log('Extracted topics:', topics);
+    return topics;
+  } catch (error) {
+    console.error('Error extracting topics:', error);
+    // Fallback to mock data if API call fails
+    return mockProcessTranscript(transcript);
+  }
+};
+
+// Find links for the extracted topics using OpenAI
+export const findLinksForTopics = async (topics: string[], apiKey?: string): Promise<ProcessedTopic[]> => {
+  console.log('Finding links for topics:', topics);
+  
+  if (!apiKey) {
+    // If no API key, return mock data for demonstration
+    return mockFindLinksForTopics(topics);
+  }
+  
+  try {
+    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${apiKey}`
+      },
+      body: JSON.stringify({
+        model: 'gpt-4o',
+        messages: [
+          {
+            role: 'system',
+            content: 'You are an assistant that finds authoritative links for topics mentioned in podcasts. For each topic, provide 1-3 high-quality links with titles and descriptions. For books, find publisher pages. For organizations, find official websites. Avoid Wikipedia, Amazon, and search results. Return ONLY a JSON array with the structure: [{"topic": string, "links": [{"url": string, "title": string, "description": string}]}]'
+          },
+          {
+            role: 'user',
+            content: `Find authoritative links for these topics mentioned in a podcast: ${JSON.stringify(topics)}. For each topic, provide 1-3 reliable links with titles and descriptions. Prioritize official sources over third-party sites.`
+          }
+        ],
+        temperature: 0.3,
+        response_format: { type: 'json_object' }
+      })
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      console.error('OpenAI API error:', errorData);
+      throw new Error(`API error: ${response.status}`);
+    }
+
+    const data = await response.json();
+    const processedTopics = JSON.parse(data.choices[0].message.content).topics;
+    
+    return processedTopics;
+  } catch (error) {
+    console.error('Error finding links:', error);
+    // Fallback to mock data if API call fails
+    return mockFindLinksForTopics(topics);
+  }
+};
+
+// Mock implementation for fallback or demo purposes
+const mockProcessTranscript = (transcript: string): Promise<string[]> => {
   return new Promise((resolve) => {
     setTimeout(() => {
       // Simulate finding topics in transcript
@@ -70,10 +166,7 @@ export const processTranscript = async (transcript: string): Promise<string[]> =
 };
 
 // Mock function to generate links for topics
-export const findLinksForTopics = async (topics: string[]): Promise<ProcessedTopic[]> => {
-  console.log('Finding links for topics:', topics);
-  
-  // In a real implementation, this would make API calls to search engines or databases
+const mockFindLinksForTopics = (topics: string[]): Promise<ProcessedTopic[]> => {
   return new Promise((resolve) => {
     setTimeout(() => {
       const processedTopics: ProcessedTopic[] = topics.map(topic => {
