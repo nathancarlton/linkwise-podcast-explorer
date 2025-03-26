@@ -18,13 +18,33 @@ const Index = () => {
   const [links, setLinks] = useState<LinkItem[]>([]);
   const [apiKey, setApiKey] = useState<string>('');
   const [usedMockData, setUsedMockData] = useState<boolean>(false);
+  const [transcriptHash, setTranscriptHash] = useState<string>('');
   
   const handleApiKeySave = (key: string) => {
     setApiKey(key);
   };
 
+  // Simple hash function to detect if we have a new transcript
+  const hashTranscript = (transcript: string): string => {
+    let hash = 0;
+    if (transcript.length === 0) return hash.toString();
+    for (let i = 0; i < transcript.length; i++) {
+      const char = transcript.charCodeAt(i);
+      hash = ((hash << 5) - hash) + char;
+      hash = hash & hash; // Convert to 32bit integer
+    }
+    return hash.toString();
+  };
+
   const handleProcessTranscript = async (transcript: string) => {
     try {
+      // Check if this is a new transcript
+      const newHash = hashTranscript(transcript);
+      if (newHash === transcriptHash && links.length > 0) {
+        toast.info('Processing the same transcript again. Results may be similar.');
+      }
+      setTranscriptHash(newHash);
+      
       // Start processing
       setProcessingStage(ProcessingStage.ProcessingTranscript);
       setLinks([]);
@@ -90,10 +110,6 @@ const Index = () => {
       
       const topicName = processedTopic.topic || 'Unknown Topic';
       const topicContext = processedTopic.context;
-      
-      processedTopics.forEach(topic => {
-        console.log(`Processing topic: ${topic.topic}, with ${topic.links?.length || 0} links`);
-      });
       
       processedTopic.links.forEach(link => {
         if (!link) {

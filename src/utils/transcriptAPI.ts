@@ -230,9 +230,8 @@ export const findLinksForTopics = async (topics: string[], apiKey?: string): Pro
             role: 'system',
             content: `You are an assistant that finds high-quality, specific, and authoritative links for topics mentioned in podcasts.
 
-For each topic, provide 2-3 highly relevant links:
-1. Focus on specific pages (not just homepages)
-2. Prioritize links from:
+For each topic, provide 2-3 highly relevant links to SPECIFIC PAGES (not just homepages):
+1. Prioritize links from:
    - Harvard Business Review (hbr.org)
    - McKinsey (mckinsey.com)
    - Nature (nature.com)
@@ -241,19 +240,29 @@ For each topic, provide 2-3 highly relevant links:
    - Scholarly publications
 
 For each link, include:
-- Specific full URL (not shortened)
-- Descriptive title of the page
-- 1-2 sentence description of the content
+- Specific full URL with exact path (never use shortened URLs)
+- Full, descriptive title of the page
+- 1-2 sentence description of why this content is valuable and directly relevant to the topic
 
-IMPORTANT: Generate at least 15-20 total links across all topics, focusing on quality and relevance.
+IMPORTANT: 
+- Generate 15-20 total links across all topics
+- Focus on quality and relevance over quantity
+- Be very specific with URLs - include the full path to specific articles
+- Ensure the links are to real, accessible content that actually exists
+- Never hallucinate or make up URLs - only suggest real pages that are accessible
 
 Return ONLY a JSON array with this structure: [{"topic": string, "context": string, "links": [{"url": string, "title": string, "description": string}]}]`
           },
           {
             role: 'user',
-            content: `Find specific, high-quality links for these podcast topics. For each topic, provide 2-3 links to SPECIFIC PAGES (not just homepages) that address the exact context of the topic. Use search engines to find current, working URLs for pages that specifically address each topic in its context. 
+            content: `Find specific, high-quality links for these podcast topics. For each topic, provide 2-3 links to SPECIFIC PAGES that address the exact context of the topic.
 
-Generate at least 15-20 total links across all topics, focusing on links from Harvard Business Review, McKinsey, Nature, educational institutions, and other authoritative sources: ${JSON.stringify(topics)}.`
+Remember that many site URLs frequently change or get updated, so be very careful to provide current, working URLs. Focus on:
+1. Links from Harvard Business Review, McKinsey, Nature, educational institutions, and other authoritative sources
+2. Recent content (within the last 3-5 years) that is still accessible
+3. Specific article pages (not just section pages or home pages)
+
+Generate at least 15-20 total links across all topics (2-3 per topic): ${JSON.stringify(topics)}`
           }
         ],
         temperature: 0.2,
@@ -291,8 +300,9 @@ Generate at least 15-20 total links across all topics, focusing on links from Ha
         return { processedTopics: mockTopics, usedMockData: true };
       }
       
-      // Validate and filter links to ensure they're working
+      // Validate and filter links to ensure they're high quality
       const verifiedTopics: ProcessedTopic[] = [];
+      const validationPromises = [];
       
       for (const topic of processedTopics) {
         if (!topic || !topic.topic || !Array.isArray(topic.links)) {
@@ -300,65 +310,69 @@ Generate at least 15-20 total links across all topics, focusing on links from Ha
           continue;
         }
         
-        const verifiedLinks = [];
-        
+        // Validate all links for a topic in parallel
         for (const link of topic.links) {
           if (!link || !link.url) {
             console.warn('Invalid link object, skipping:', link);
             continue;
           }
           
-          try {
-            // We're being more lenient with URL validation to ensure more links pass through
-            // The user can still manually filter out any that don't work
-            const linkUrl = link.url;
-            
-            // Check if the URL is from known problematic domains and skip validation
-            if (linkUrl.includes('forbes.com') || linkUrl.includes('hbr.org') || 
-                linkUrl.includes('mckinsey.com') || linkUrl.includes('nature.com')) {
-              console.log(`URL from known problematic domain, accepting without validation: ${linkUrl}`);
-              verifiedLinks.push(link);
-              continue;
-            }
-            
-            // For other domains, validate the URL
-            const isValid = await validateUrl(linkUrl);
-            if (isValid) {
-              verifiedLinks.push(link);
-            } else {
-              console.warn(`URL validation failed for ${linkUrl}, but accepting it anyway to provide more options`);
-              // Still add the link even if validation fails to offer more options to users
-              verifiedLinks.push(link);
-            }
-          } catch (error) {
-            console.warn(`Error validating URL ${link.url}, but adding anyway:`, error);
-            // Still add the link even if validation has an error
-            verifiedLinks.push(link);
-          }
-        }
-        
-        // Add topics even if not all links are valid
-        if (verifiedLinks.length > 0) {
-          verifiedTopics.push({
-            topic: topic.topic,
-            context: topic.context,
-            links: verifiedLinks
-          });
-        } else if (topic.links && topic.links.length > 0) {
-          // If all links failed validation but we have links, add the first one anyway
-          console.log(`All links failed for topic "${topic.topic}", but adding first link anyway`);
-          verifiedTopics.push({
-            topic: topic.topic,
-            context: topic.context,
-            links: [topic.links[0]]
-          });
+          // Push the validation promise to our array
+          validationPromises.push(
+            validateUrl(link.url).then(isValid => {
+              return {
+                topic,
+                link,
+                isValid
+              };
+            })
+          );
         }
       }
       
-      if (verifiedTopics.length === 0) {
-        console.warn('No valid links found after verification, using mock data');
+      // Wait for all validation promises to resolve
+      const validationResults = await Promise.all(validationPromises);
+      
+      // Group the validation results by topic
+      const groupedResults = {};
+      
+      validationResults.forEach(result => {
+        const { topic, link, isValid } = result;
+        
+        if (isValid) {
+          if (!groupedResults[topic.topic]) {
+            groupedResults[topic.topic] = {
+              topic: topic.topic,
+              context: topic.context,
+              links: []
+            };
+          }
+          
+          groupedResults[topic.topic].links.push(link);
+        } else {
+          console.warn(`Link validation failed for ${link.url}, excluding from results`);
+        }
+      });
+      
+      // Convert the grouped results to an array
+      Object.values(groupedResults).forEach(groupedTopic => {
+        if (groupedTopic.links.length > 0) {
+          verifiedTopics.push(groupedTopic as ProcessedTopic);
+        }
+      });
+      
+      // If we don't have enough valid topics/links, try to get some mock data to supplement
+      if (verifiedTopics.length < 5) {
+        console.warn(`Not enough verified topics (${verifiedTopics.length}), supplementing with mock data`);
         const mockTopics = generateMockLinks(topics);
-        return { processedTopics: mockTopics, usedMockData: true };
+        
+        // Add mock topics that don't already exist in our verified topics
+        mockTopics.forEach(mockTopic => {
+          const existingTopic = verifiedTopics.find(t => t.topic === mockTopic.topic);
+          if (!existingTopic) {
+            verifiedTopics.push(mockTopic);
+          }
+        });
       }
       
       return { processedTopics: verifiedTopics, usedMockData: false };
