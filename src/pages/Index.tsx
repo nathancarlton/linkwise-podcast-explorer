@@ -58,7 +58,7 @@ const Index = () => {
       
       if (linkItems.length > 0) {
         if (usedMockForTopics || usedMockForLinks) {
-          toast.warning('Generated example links - API key may be invalid');
+          toast.warning('Generated example links - OpenAI API key is missing or invalid. Please add a valid key to get better results.');
         } else {
           toast.success(`Found ${linkItems.length} links across ${processedTopics?.length || 0} topics`);
         }
@@ -89,6 +89,7 @@ const Index = () => {
       }
       
       const topicName = processedTopic.topic || 'Unknown Topic';
+      const topicContext = processedTopic.context;
       
       processedTopics.forEach(topic => {
         console.log(`Processing topic: ${topic.topic}, with ${topic.links?.length || 0} links`);
@@ -123,6 +124,7 @@ const Index = () => {
           topic: topicName,
           url: link.url || '#',
           title: title,
+          context: topicContext,
           description: link.description || 'No description available',
           checked: true, // Default to checked
         });

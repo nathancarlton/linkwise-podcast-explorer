@@ -9,7 +9,7 @@ export const processTranscript = async (transcript: string, apiKey?: string): Pr
   console.log('Processing transcript of length:', transcript.length);
   
   if (!apiKey || apiKey.trim() === '' || !apiKey.startsWith('sk-') || apiKey.length < 20) {
-    console.warn('No API key or invalid API key provided, using mock data');
+    console.warn('No valid OpenAI API key provided, using mock data');
     const mockTopics = await mockProcessTranscript(transcript);
     return { topics: mockTopics, usedMockData: true };
   }
@@ -26,11 +26,11 @@ export const processTranscript = async (transcript: string, apiKey?: string): Pr
         messages: [
           {
             role: 'system',
-            content: 'You are an assistant that extracts meaningful topics from podcast transcripts. Focus on extracting 5-10 specific resources mentioned in the transcript like books, websites, organizations, or key concepts that would be useful for the podcast audience. Return ONLY a JSON array of topic strings with no additional text.'
+            content: 'You are a podcast content analyzer that extracts meaningful, valuable topics with context from podcast transcripts. Focus on extracting 5-8 specific resources mentioned (books, websites, organizations) or key concepts that would be useful for listeners. For each topic, provide a brief context (20 words max) explaining why it\'s relevant to the conversation. Return ONLY a JSON array in this format: [{"topic": "specific resource name", "context": "brief explanation of why this is relevant"}]'
           },
           {
             role: 'user',
-            content: `Extract 5-10 meaningful topics from this podcast transcript that would benefit the listeners. Focus on specific resources mentioned (books, websites, organizations) or key concepts. Prioritize resources that listeners might want to look up after the show:\n\n${transcript}`
+            content: `Extract 5-8 most valuable topics from this podcast transcript that listeners would want to learn more about. Focus on specific resources mentioned (books, websites, organizations) or key concepts. For each topic, provide a brief context (max 20 words) explaining what was discussed about this topic and why it's valuable:\n\n${transcript}`
           }
         ],
         temperature: 0.3,
@@ -58,15 +58,18 @@ export const processTranscript = async (transcript: string, apiKey?: string): Pr
       const parsedContent = JSON.parse(content);
       
       // Support both formats the API might return
-      const topics = parsedContent.topics || [];
+      const topicsWithContext = parsedContent.topics || [];
       
-      if (!Array.isArray(topics) || topics.length === 0) {
+      if (!Array.isArray(topicsWithContext) || topicsWithContext.length === 0) {
         console.error('No topics found in API response');
         const mockTopics = await mockProcessTranscript(transcript);
         return { topics: mockTopics, usedMockData: true };
       }
       
-      console.log('Extracted topics:', topics);
+      // Extract just the topic names for compatibility with existing code
+      const topics = topicsWithContext.map(item => item.topic);
+      
+      console.log('Extracted topics with context:', topicsWithContext);
       return { topics, usedMockData: false };
     } catch (parseError) {
       console.error('Error parsing OpenAI response:', parseError);
@@ -81,12 +84,12 @@ export const processTranscript = async (transcript: string, apiKey?: string): Pr
   }
 };
 
-// Find links for the extracted topics using OpenAI
+// Find links for the extracted topics using OpenAI and search APIs
 export const findLinksForTopics = async (topics: string[], apiKey?: string): Promise<{ processedTopics: ProcessedTopic[], usedMockData: boolean }> => {
   console.log('Finding links for topics:', topics);
   
   if (!apiKey || apiKey.trim() === '' || !apiKey.startsWith('sk-') || apiKey.length < 20) {
-    console.warn('No API key or invalid API key provided, using mock data');
+    console.warn('No valid OpenAI API key provided, using mock data');
     const mockTopics = await mockFindLinksForTopics(topics);
     return { processedTopics: mockTopics, usedMockData: true };
   }
@@ -103,14 +106,14 @@ export const findLinksForTopics = async (topics: string[], apiKey?: string): Pro
         messages: [
           {
             role: 'system',
-            content: 'You are an assistant that finds high-quality, authoritative links for topics mentioned in podcasts. For each topic, provide 1-3 high-quality links with titles and descriptions. For books, find publisher pages. For organizations, find official websites. Avoid Wikipedia, Amazon, and search results. Use real, working URLs that are directly related to the topic. Return ONLY a JSON array with the structure: [{"topic": string, "links": [{"url": string, "title": string, "description": string}]}]'
+            content: 'You are an assistant that finds high-quality, specific, and authoritative links for topics mentioned in podcasts. For each topic, provide 1-2 highly relevant links with specific page URLs (not just homepage URLs), along with a brief context about what was discussed. Prioritize official sources, educational resources, and authoritative sites. Focus on finding specific pages related to the context, not just general homepages. Return ONLY a JSON array with this structure: [{"topic": string, "context": string, "links": [{"url": string, "title": string, "description": string}]}]'
           },
           {
             role: 'user',
-            content: `Find real, working links for these topics mentioned in a podcast: ${JSON.stringify(topics)}. For each topic, provide 1-3 reliable links with titles and descriptions. Prioritize official sources that are guaranteed to be working. Focus on well-known sites, not obscure domains that might be down. Make sure all URLs are valid, up-to-date and directly related to the topics.`
+            content: `Find specific, high-quality links for these podcast topics. For each topic, provide 1-2 links to SPECIFIC PAGES (not just homepages) that address the exact context of the topic. Use search engines to find current, working URLs for pages that specifically address each topic in its context: ${JSON.stringify(topics)}.`
           }
         ],
-        temperature: 0.3,
+        temperature: 0.2,
         response_format: { type: 'json_object' }
       })
     });
@@ -179,6 +182,7 @@ export const findLinksForTopics = async (topics: string[], apiKey?: string): Pro
         if (verifiedLinks.length > 0) {
           verifiedTopics.push({
             topic: topic.topic,
+            context: topic.context,
             links: verifiedLinks
           });
         }

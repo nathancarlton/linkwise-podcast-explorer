@@ -50,7 +50,8 @@ const LinksList: React.FC<LinksListProps> = ({ links, onLinkToggle, usedMockData
           <Alert className="mb-4">
             <AlertCircle className="h-4 w-4" />
             <AlertDescription>
-              Using example links because of an API key issue. Please check your OpenAI API key.
+              Using example links because an OpenAI API key is either missing, invalid, or has insufficient permissions. 
+              Please add a valid OpenAI API key with access to GPT models using the "Set OpenAI API Key" button above.
             </AlertDescription>
           </Alert>
         )}
@@ -69,13 +70,18 @@ const LinksList: React.FC<LinksListProps> = ({ links, onLinkToggle, usedMockData
                         onCheckedChange={(checked) => onLinkToggle(link.id, !!checked)} 
                         className="mt-1"
                       />
-                      <div className="flex-1 min-w-0"> {/* Added min-w-0 to allow content to shrink */}
+                      <div className="flex-1 min-w-0">
                         <label 
                           htmlFor={link.id} 
                           className="font-medium cursor-pointer hover:text-primary transition-colors"
                         >
                           {link.title}
                         </label>
+                        {link.context && (
+                          <p className="text-sm text-muted-foreground italic mt-1">
+                            {link.context}
+                          </p>
+                        )}
                         <div className="mt-1">
                           <a 
                             href={link.url} 

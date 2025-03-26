@@ -5,11 +5,13 @@ export interface LinkItem {
   url: string;
   title: string;
   description: string;
+  context?: string;
   checked: boolean;
 }
 
 export interface ProcessedTopic {
   topic: string;
+  context?: string;
   links: {
     url: string;
     title: string;
