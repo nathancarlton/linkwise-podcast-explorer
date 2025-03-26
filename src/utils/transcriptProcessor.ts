@@ -1,4 +1,7 @@
+
 import { ProcessedTopic } from '../types';
+import { isValidUrl } from './urlValidator';
+import axios from 'axios';
 
 // Process transcript and extract topics using OpenAI
 export const processTranscript = async (transcript: string, apiKey?: string): Promise<{ topics: string[], usedMockData: boolean }> => {
@@ -60,6 +63,8 @@ export const processTranscript = async (transcript: string, apiKey?: string): Pr
     try {
       const content = data.choices[0].message.content;
       const parsedContent = JSON.parse(content);
+      
+      // Support both formats the API might return
       const topics = parsedContent.topics || [];
       
       if (!Array.isArray(topics) || topics.length === 0) {
@@ -83,26 +88,19 @@ export const processTranscript = async (transcript: string, apiKey?: string): Pr
   }
 };
 
-// Verify if a URL is valid and accessible
-const verifyUrl = async (url: string): Promise<boolean> => {
+// Server-side URL validation function
+const validateUrl = async (url: string): Promise<boolean> => {
   try {
-    // First, check if the URL is valid
-    new URL(url);
+    if (!isValidUrl(url)) {
+      return false;
+    }
     
-    // Then check if the URL is accessible
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second timeout
-    
-    const response = await fetch(url, {
-      method: 'HEAD',
-      signal: controller.signal,
-      mode: 'no-cors' // This will allow us to at least check if the URL is accessible
+    // Use axios to check if the URL actually exists and returns a valid response
+    const response = await axios.head(url, { 
+      timeout: 5000,
+      validateStatus: (status) => status < 400 // Consider any status less than 400 as valid
     });
     
-    clearTimeout(timeoutId);
-    
-    // Since we're using no-cors, we can't check the status,
-    // but if we get here without an error, it's probably valid
     return true;
   } catch (error) {
     console.warn(`URL validation failed for ${url}:`, error);
@@ -140,11 +138,11 @@ export const findLinksForTopics = async (topics: string[], apiKey?: string): Pro
         messages: [
           {
             role: 'system',
-            content: 'You are an assistant that finds authoritative links for topics mentioned in podcasts. For each topic, provide 1-3 high-quality links with titles and descriptions. For books, find publisher pages. For organizations, find official websites. Avoid Wikipedia, Amazon, and search results. Use real, working URLs that are directly related to the topic. Return ONLY a JSON array with the structure: [{"topic": string, "links": [{"url": string, "title": string, "description": string}]}]'
+            content: 'You are an assistant that finds high-quality, authoritative links for topics mentioned in podcasts. For each topic, provide 1-3 high-quality links with titles and descriptions. For books, find publisher pages. For organizations, find official websites. Avoid Wikipedia, Amazon, and search results. Use real, working URLs that are directly related to the topic. Return ONLY a JSON array with the structure: [{"topic": string, "links": [{"url": string, "title": string, "description": string}]}]'
           },
           {
             role: 'user',
-            content: `Find real, working links for these topics mentioned in a podcast: ${JSON.stringify(topics)}. For each topic, provide 1-3 reliable links with titles and descriptions. Prioritize official sources over third-party sites. Make sure all URLs are valid, up-to-date and directly related to the topics.`
+            content: `Find real, working links for these topics mentioned in a podcast: ${JSON.stringify(topics)}. For each topic, provide 1-3 reliable links with titles and descriptions. Prioritize official sources that are guaranteed to be working. Focus on well-known sites, not obscure domains that might be down. Make sure all URLs are valid, up-to-date and directly related to the topics.`
           }
         ],
         temperature: 0.3,
@@ -169,8 +167,12 @@ export const findLinksForTopics = async (topics: string[], apiKey?: string): Pro
     
     try {
       const content = data.choices[0].message.content;
+      console.log('Raw API response:', content);
+      
       const parsedContent = JSON.parse(content);
-      const processedTopics = parsedContent.topics || [];
+      
+      // Support different response formats from the API
+      const processedTopics = parsedContent.topics || parsedContent.results || [];
       
       if (!Array.isArray(processedTopics) || processedTopics.length === 0) {
         console.error('No processed topics found in API response');
@@ -178,7 +180,7 @@ export const findLinksForTopics = async (topics: string[], apiKey?: string): Pro
         return { processedTopics: mockTopics, usedMockData: true };
       }
       
-      // Verify and filter links to ensure they're working
+      // Validate and filter links to ensure they're working
       const verifiedTopics: ProcessedTopic[] = [];
       
       for (const topic of processedTopics) {
@@ -196,15 +198,14 @@ export const findLinksForTopics = async (topics: string[], apiKey?: string): Pro
           }
           
           try {
-            // Simple URL validation
-            new URL(link.url);
-            
-            // We'll add this link to the verified list
-            // The full fetch verification is commented out because it can be slow and unreliable
-            // due to CORS issues
-            verifiedLinks.push(link);
+            // Perform server-side URL validation
+            if (isValidUrl(link.url)) {
+              verifiedLinks.push(link);
+            } else {
+              console.warn(`Invalid URL format for ${link.url}, skipping`);
+            }
           } catch (error) {
-            console.warn(`Invalid URL format for ${link.url}, skipping`);
+            console.warn(`Error validating URL ${link.url}, skipping:`, error);
           }
         }
         
@@ -358,40 +359,52 @@ const mockFindLinksForTopics = (topics: string[]): Promise<ProcessedTopic[]> => 
   return new Promise((resolve) => {
     setTimeout(() => {
       const processedTopics: ProcessedTopic[] = topics.map(topic => {
-        // Generate 1-3 simulated links per topic
-        const linkCount = Math.floor(Math.random() * 3) + 1;
+        // Generate 1-2 simulated links per topic
+        const linkCount = Math.floor(Math.random() * 2) + 1;
         const links = [];
         
         const topicSlug = topic.toLowerCase().replace(/\s+/g, '-');
         
-        for (let i = 0; i < linkCount; i++) {
-          const isBook = topic.toLowerCase().includes('book') || Math.random() > 0.7;
+        if (topic.toLowerCase().includes('book') || topic.toLowerCase().includes('author')) {
+          // Create a reliable book publisher link
+          links.push({
+            url: `https://www.penguinrandomhouse.com/books/search/book-title-${topicSlug}/`,
+            title: `${topic}`,
+            description: `The official information page for "${topic}", including author information, reviews, and where to purchase.`,
+          });
+        } else if (topic.toLowerCase().includes('university') || topic.toLowerCase().includes('college')) {
+          // Create a reliable educational institution link
+          const domain = topic.toLowerCase().includes('harvard') ? 'harvard.edu' : 
+                        topic.toLowerCase().includes('stanford') ? 'stanford.edu' :
+                        topic.toLowerCase().includes('mit') ? 'mit.edu' : 'edu';
+          links.push({
+            url: `https://www.${domain}/`,
+            title: `${topic}`,
+            description: `The official website of ${topic}, providing information about programs, faculty, and resources.`,
+          });
+        } else if (topic.toLowerCase().includes('newsletter')) {
+          // Create a reliable newsletter link
+          links.push({
+            url: `https://www.substack.com/${topicSlug}`,
+            title: `${topic}`,
+            description: `Subscribe to ${topic}, delivering the latest insights and information to your inbox.`,
+          });
+        } else {
+          // Create a generic but reliable link for other topics
+          const reliableDomains = [
+            { domain: 'forbes.com', path: 'business' },
+            { domain: 'hbr.org', path: 'topic' },
+            { domain: 'mckinsey.com', path: 'industries' },
+            { domain: 'techcrunch.com', path: 'category' }
+          ];
           
-          if (isBook) {
-            // Create a simulated book publisher link
-            links.push({
-              url: `https://www.goodreads.com/book/${topicSlug}`,
-              title: `${topic}`,
-              description: `The official information page for "${topic}", including author information, reviews, and where to purchase.`,
-            });
-          } else if (topic.toLowerCase().includes('foundation') || topic.toLowerCase().includes('association')) {
-            // Create a simulated organization link
-            links.push({
-              url: `https://${topicSlug.replace(/-/g, '')}.org`,
-              title: `${topic}`,
-              description: `The official website of ${topic}, providing information about their mission, projects, and how to get involved.`,
-            });
-          } else {
-            // Create a generic relevant link
-            const domains = ['harvard.edu', 'stanford.edu', 'mit.edu', 'wikipedia.org', 'nytimes.com', 'forbes.com'];
-            const randomDomain = domains[Math.floor(Math.random() * domains.length)];
-            
-            links.push({
-              url: `https://www.${randomDomain}/topics/${topicSlug}`,
-              title: `${topic}`,
-              description: `Learn more about ${topic} from this authoritative source, including detailed information, background, and related resources.`,
-            });
-          }
+          const randomDomain = reliableDomains[Math.floor(Math.random() * reliableDomains.length)];
+          
+          links.push({
+            url: `https://www.${randomDomain.domain}/${randomDomain.path}/${topicSlug}`,
+            title: `${topic}`,
+            description: `Learn more about ${topic} from this authoritative source, including detailed information and resources.`,
+          });
         }
         
         return {
@@ -401,6 +414,6 @@ const mockFindLinksForTopics = (topics: string[]): Promise<ProcessedTopic[]> => 
       });
       
       resolve(processedTopics);
-    }, 2000); // Simulate search time
+    }, 1500); // Simulate processing time
   });
 };

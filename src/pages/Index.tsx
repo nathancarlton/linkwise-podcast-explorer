@@ -39,9 +39,13 @@ const Index = () => {
         return;
       }
       
+      console.log('Successfully extracted topics:', topics);
+      
       // Find links for the extracted topics
       setProcessingStage(ProcessingStage.FindingLinks);
       const { processedTopics, usedMockData: usedMockForLinks } = await findLinksForTopics(topics, apiKey);
+      
+      console.log('Processed topics with links:', processedTopics);
       
       // Set whether mock data was used
       setUsedMockData(usedMockForTopics || usedMockForLinks);
@@ -86,14 +90,25 @@ const Index = () => {
       
       const topicName = processedTopic.topic || 'Unknown Topic';
       
+      processedTopics.forEach(topic => {
+        console.log(`Processing topic: ${topic.topic}, with ${topic.links?.length || 0} links`);
+      });
+      
       processedTopic.links.forEach(link => {
-        if (!link) return;
+        if (!link) {
+          console.warn('Invalid link object, skipping');
+          return;
+        }
+        
+        console.log(`Adding link: ${link.title} - ${link.url}`);
         
         // Clean up title - remove redundant topic name from beginning of title
         let title = link.title || 'Untitled Link';
         
         // Check if title starts with the topic name
-        if (title.startsWith(topicName) && title.length > topicName.length) {
+        if (title.toLowerCase() === topicName.toLowerCase() || 
+            title.toLowerCase().startsWith(topicName.toLowerCase() + ' - ') || 
+            title.toLowerCase().startsWith(topicName.toLowerCase() + ': ')) {
           // Remove topic name and any separator (like " - " or ": ")
           title = title.substring(topicName.length).replace(/^[\s-:]+/, '').trim();
         }
@@ -114,6 +129,7 @@ const Index = () => {
       });
     });
     
+    console.log(`Created ${linkItems.length} link items total`);
     return linkItems;
   };
 
