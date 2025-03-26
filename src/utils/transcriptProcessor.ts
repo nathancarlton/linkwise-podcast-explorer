@@ -199,10 +199,11 @@ export const findLinksForTopics = async (topics: string[], apiKey?: string): Pro
           
           try {
             // Perform server-side URL validation
-            if (isValidUrl(link.url)) {
+            const isValid = await validateUrl(link.url);
+            if (isValid) {
               verifiedLinks.push(link);
             } else {
-              console.warn(`Invalid URL format for ${link.url}, skipping`);
+              console.warn(`URL validation failed for ${link.url}, skipping`);
             }
           } catch (error) {
             console.warn(`Error validating URL ${link.url}, skipping:`, error);
