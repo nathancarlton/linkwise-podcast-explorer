@@ -2,7 +2,121 @@
 import axios from 'axios';
 import { ProcessedTopic } from '../types';
 import { validateUrl } from './urlUtils';
-import { mockProcessTranscript, mockFindLinksForTopics } from './mockTranscriptData';
+
+// Sample quality mock topics when an API key isn't provided
+const generateMockTopics = (transcript: string): string[] => {
+  // Extract some plausible topics based on common patterns in podcasts
+  const topics = [
+    "Generative AI Applications",
+    "Digital Transformation",
+    "Healthcare Innovation",
+    "AI Ethics",
+    "Future of Work",
+    "TechCrunch AI Coverage",
+    "Harvard Business Review",
+    "McKinsey Digital Research",
+    "MIT Technology Review",
+    "AI in Healthcare"
+  ];
+  
+  return topics;
+};
+
+// Generate mock links when an API key isn't provided
+const generateMockLinks = (topics: string[]): ProcessedTopic[] => {
+  const mockTopics: ProcessedTopic[] = [
+    {
+      topic: "Generative AI Applications",
+      context: "Discussion of how businesses are implementing generative AI for productivity gains",
+      links: [
+        {
+          url: "https://www.mckinsey.com/capabilities/mckinsey-digital/our-insights/tech-forward/generative-ai-a-creative-new-world",
+          title: "Generative AI: A Creative New World",
+          description: "McKinsey's comprehensive analysis of how generative AI is transforming business operations and creative workflows."
+        }
+      ]
+    },
+    {
+      topic: "AI in Healthcare",
+      context: "Exploring how AI is improving patient outcomes and healthcare operations",
+      links: [
+        {
+          url: "https://www.nature.com/articles/s41746-020-00376-2",
+          title: "Artificial intelligence in healthcare: transforming the practice of medicine",
+          description: "Nature's in-depth review of AI applications in healthcare, from diagnostics to treatment planning."
+        }
+      ]
+    },
+    {
+      topic: "Future of Work",
+      context: "How AI and automation are reshaping career paths and workplaces",
+      links: [
+        {
+          url: "https://hbr.org/2022/11/the-new-rules-of-work",
+          title: "The New Rules of Work",
+          description: "Harvard Business Review's analysis of how technological change is redefining work norms and career development."
+        }
+      ]
+    },
+    {
+      topic: "AI Ethics",
+      context: "Discussion about responsible AI development and governance frameworks",
+      links: [
+        {
+          url: "https://www.ieee.org/about/corporate/governance/p7000.html",
+          title: "IEEE Global Initiative on Ethics of AI Systems",
+          description: "IEEE's framework for ethical considerations in autonomous and intelligent systems development."
+        }
+      ]
+    },
+    {
+      topic: "TechCrunch AI Coverage",
+      context: "Referenced as a source for staying current with AI industry developments",
+      links: [
+        {
+          url: "https://techcrunch.com/category/artificial-intelligence/",
+          title: "TechCrunch AI Coverage",
+          description: "The latest news, analysis and developments in artificial intelligence from TechCrunch's editorial team."
+        }
+      ]
+    },
+    {
+      topic: "Digital Transformation",
+      context: "How organizations are implementing technology to reinvent business processes",
+      links: [
+        {
+          url: "https://www.mckinsey.com/business-functions/mckinsey-digital/our-insights/the-digital-transformation-collection",
+          title: "The Digital Transformation Collection",
+          description: "McKinsey's comprehensive resource on digital transformation strategy and implementation across industries."
+        }
+      ]
+    },
+    {
+      topic: "Career Development in Tech",
+      context: "Advice for professionals navigating careers in rapidly evolving technology sectors",
+      links: [
+        {
+          url: "https://www.forbes.com/sites/forbestechcouncil/2023/05/15/how-to-future-proof-your-career-in-tech/",
+          title: "Future-Proofing Your Tech Career",
+          description: "Expert advice from Forbes on building adaptable skills and navigating technological disruption in your career."
+        }
+      ]
+    },
+    {
+      topic: "Harvard Business Review",
+      context: "Referenced for research on business applications of artificial intelligence",
+      links: [
+        {
+          url: "https://hbr.org/topic/artificial-intelligence",
+          title: "HBR on Artificial Intelligence",
+          description: "Harvard Business Review's collection of articles, research and case studies on AI implementation in business."
+        }
+      ]
+    }
+  ];
+  
+  return mockTopics;
+};
 
 // Process transcript and extract topics using OpenAI
 export const processTranscript = async (transcript: string, apiKey?: string): Promise<{ topics: string[], usedMockData: boolean }> => {
@@ -10,7 +124,7 @@ export const processTranscript = async (transcript: string, apiKey?: string): Pr
   
   if (!apiKey || apiKey.trim() === '' || !apiKey.startsWith('sk-') || apiKey.length < 20) {
     console.warn('No valid OpenAI API key provided, using mock data');
-    const mockTopics = await mockProcessTranscript(transcript);
+    const mockTopics = generateMockTopics(transcript);
     return { topics: mockTopics, usedMockData: true };
   }
   
@@ -41,7 +155,7 @@ export const processTranscript = async (transcript: string, apiKey?: string): Pr
     if (!response.ok) {
       const errorData = await response.json();
       console.error('OpenAI API error:', errorData);
-      const mockTopics = await mockProcessTranscript(transcript);
+      const mockTopics = generateMockTopics(transcript);
       return { topics: mockTopics, usedMockData: true };
     }
 
@@ -49,7 +163,7 @@ export const processTranscript = async (transcript: string, apiKey?: string): Pr
     
     if (!data || !data.choices || !data.choices[0] || !data.choices[0].message || !data.choices[0].message.content) {
       console.error('Invalid response format from OpenAI API');
-      const mockTopics = await mockProcessTranscript(transcript);
+      const mockTopics = generateMockTopics(transcript);
       return { topics: mockTopics, usedMockData: true };
     }
     
@@ -62,7 +176,7 @@ export const processTranscript = async (transcript: string, apiKey?: string): Pr
       
       if (!Array.isArray(topicsWithContext) || topicsWithContext.length === 0) {
         console.error('No topics found in API response');
-        const mockTopics = await mockProcessTranscript(transcript);
+        const mockTopics = generateMockTopics(transcript);
         return { topics: mockTopics, usedMockData: true };
       }
       
@@ -73,13 +187,13 @@ export const processTranscript = async (transcript: string, apiKey?: string): Pr
       return { topics, usedMockData: false };
     } catch (parseError) {
       console.error('Error parsing OpenAI response:', parseError);
-      const mockTopics = await mockProcessTranscript(transcript);
+      const mockTopics = generateMockTopics(transcript);
       return { topics: mockTopics, usedMockData: true };
     }
   } catch (error) {
     console.error('Error extracting topics:', error);
     // Fallback to mock data if API call fails
-    const mockTopics = await mockProcessTranscript(transcript);
+    const mockTopics = generateMockTopics(transcript);
     return { topics: mockTopics, usedMockData: true };
   }
 };
@@ -90,7 +204,7 @@ export const findLinksForTopics = async (topics: string[], apiKey?: string): Pro
   
   if (!apiKey || apiKey.trim() === '' || !apiKey.startsWith('sk-') || apiKey.length < 20) {
     console.warn('No valid OpenAI API key provided, using mock data');
-    const mockTopics = await mockFindLinksForTopics(topics);
+    const mockTopics = generateMockLinks(topics);
     return { processedTopics: mockTopics, usedMockData: true };
   }
   
@@ -121,7 +235,7 @@ export const findLinksForTopics = async (topics: string[], apiKey?: string): Pro
     if (!response.ok) {
       const errorData = await response.json();
       console.error('OpenAI API error:', errorData);
-      const mockTopics = await mockFindLinksForTopics(topics);
+      const mockTopics = generateMockLinks(topics);
       return { processedTopics: mockTopics, usedMockData: true };
     }
 
@@ -129,7 +243,7 @@ export const findLinksForTopics = async (topics: string[], apiKey?: string): Pro
     
     if (!data || !data.choices || !data.choices[0] || !data.choices[0].message || !data.choices[0].message.content) {
       console.error('Invalid response format from OpenAI API');
-      const mockTopics = await mockFindLinksForTopics(topics);
+      const mockTopics = generateMockLinks(topics);
       return { processedTopics: mockTopics, usedMockData: true };
     }
     
@@ -144,7 +258,7 @@ export const findLinksForTopics = async (topics: string[], apiKey?: string): Pro
       
       if (!Array.isArray(processedTopics) || processedTopics.length === 0) {
         console.error('No processed topics found in API response');
-        const mockTopics = await mockFindLinksForTopics(topics);
+        const mockTopics = generateMockLinks(topics);
         return { processedTopics: mockTopics, usedMockData: true };
       }
       
@@ -190,20 +304,29 @@ export const findLinksForTopics = async (topics: string[], apiKey?: string): Pro
       
       if (verifiedTopics.length === 0) {
         console.warn('No valid links found after verification, using mock data');
-        const mockTopics = await mockFindLinksForTopics(topics);
+        const mockTopics = generateMockLinks(topics);
         return { processedTopics: mockTopics, usedMockData: true };
       }
       
       return { processedTopics: verifiedTopics, usedMockData: false };
     } catch (parseError) {
       console.error('Error parsing OpenAI response:', parseError);
-      const mockTopics = await mockFindLinksForTopics(topics);
+      const mockTopics = generateMockLinks(topics);
       return { processedTopics: mockTopics, usedMockData: true };
     }
   } catch (error) {
     console.error('Error finding links:', error);
     // Fallback to mock data if API call fails
-    const mockTopics = await mockFindLinksForTopics(topics);
+    const mockTopics = generateMockLinks(topics);
     return { processedTopics: mockTopics, usedMockData: true };
   }
+};
+
+// Mock functions for backward compatibility
+export const mockProcessTranscript = async (transcript: string): Promise<string[]> => {
+  return generateMockTopics(transcript);
+};
+
+export const mockFindLinksForTopics = async (topics: string[]): Promise<ProcessedTopic[]> => {
+  return generateMockLinks(topics);
 };

@@ -50,8 +50,8 @@ const LinksList: React.FC<LinksListProps> = ({ links, onLinkToggle, usedMockData
           <Alert className="mb-4" variant="warning">
             <AlertCircle className="h-4 w-4" />
             <AlertDescription>
-              Using example links because an OpenAI API key is either missing, invalid, or has insufficient permissions. 
-              To get more relevant and accurate links, please add a valid OpenAI API key with access to GPT models using the "Set OpenAI API Key" button above.
+              Currently showing example links. For more accurate and relevant links based on your transcript, 
+              please add a valid OpenAI API key using the "Set OpenAI API Key" button above.
             </AlertDescription>
           </Alert>
         )}

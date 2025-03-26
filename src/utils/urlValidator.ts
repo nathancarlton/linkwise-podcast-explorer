@@ -17,29 +17,82 @@ export const isValidUrl = (url: string): boolean => {
       return false;
     }
     
-    // Basic pattern for domain validation
-    const domainPattern = /^[a-zA-Z0-9][a-zA-Z0-9-]{1,61}[a-zA-Z0-9](?:\.[a-zA-Z]{2,})+$/;
-    
-    // Use reasonable allowlist of known TLDs
-    const validTLDs = [
-      '.com', '.org', '.net', '.edu', '.gov', '.io', '.co',
-      '.us', '.uk', '.ca', '.au', '.de', '.fr', '.jp',
-      '.cn', '.ru', '.br', '.in', '.it', '.nl', '.es', '.app'
+    // List of known valid domains to check against
+    const knownValidDomains = [
+      'github.com',
+      'wikipedia.org',
+      'medium.com',
+      'techcrunch.com',
+      'forbes.com',
+      'hbr.org',
+      'harvard.edu',
+      'mit.edu',
+      'stanford.edu',
+      'mckinsey.com',
+      'nature.com',
+      'nytimes.com',
+      'wsj.com',
+      'acm.org',
+      'ieee.org',
+      'arxiv.org',
+      'nih.gov',
+      'pubmed.gov',
+      'ncbi.nlm.nih.gov',
+      'sciencedirect.com',
+      'springer.com',
+      'amazon.com',
+      'google.com',
+      'youtube.com',
+      'apple.com',
+      'microsoft.com',
+      'mozilla.org',
+      'cnn.com',
+      'bbc.com',
+      'openai.com',
+      'ai.google',
+      'anthropic.com',
+      'huggingface.co',
+      'kaggle.com',
+      'ted.com',
+      'coursera.org',
+      'edx.org',
+      'udacity.com',
+      'udemy.com',
     ];
     
-    const hasSomeTLD = validTLDs.some(tld => urlObj.hostname.endsWith(tld));
-    if (!hasSomeTLD) {
-      return false;
+    // Check if the domain or a subdomain of a known domain
+    const isDomainValid = knownValidDomains.some(domain => 
+      urlObj.hostname === domain || urlObj.hostname.endsWith('.' + domain)
+    );
+    
+    if (!isDomainValid) {
+      // Basic pattern for domain validation if not a known domain
+      const domainPattern = /^[a-zA-Z0-9][a-zA-Z0-9-]{1,61}[a-zA-Z0-9](?:\.[a-zA-Z]{2,})+$/;
+      
+      // Use reasonable allowlist of known TLDs
+      const validTLDs = [
+        '.com', '.org', '.net', '.edu', '.gov', '.io', '.co',
+        '.us', '.uk', '.ca', '.au', '.de', '.fr', '.jp',
+        '.cn', '.ru', '.br', '.in', '.it', '.nl', '.es', '.app'
+      ];
+      
+      const hasSomeTLD = validTLDs.some(tld => urlObj.hostname.endsWith(tld));
+      if (!hasSomeTLD) {
+        return false;
+      }
     }
     
     // Check for common patterns in fake or placeholder URLs
     const invalidPatterns = [
       'example.com', 'test.com', 'domain.com', 'mysite.com',
-      'localhost', 'website.com', 'placeholder', '127.0.0.1'
+      'localhost', 'website.com', 'placeholder', '127.0.0.1',
+      'appliedai.mn', 'business/think', 'business/right', 'topic/really',
+      'business/going', 'industries/because', 'category/about', 
+      'category/caroline', 'category/justin'
     ];
     
     // Reject if hostname contains invalid patterns
-    if (invalidPatterns.some(pattern => urlObj.hostname.includes(pattern))) {
+    if (invalidPatterns.some(pattern => urlObj.hostname.includes(pattern) || url.includes(pattern))) {
       return false;
     }
     
