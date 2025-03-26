@@ -50,7 +50,24 @@ export const processTranscript = async (transcript: string, apiKey?: string): Pr
     }
 
     const data = await response.json();
-    const topics = JSON.parse(data.choices[0].message.content).topics;
+    let topics = [];
+    
+    try {
+      // Try to parse the response content
+      if (data.choices && data.choices[0] && data.choices[0].message && data.choices[0].message.content) {
+        const content = JSON.parse(data.choices[0].message.content);
+        topics = content.topics || [];
+      }
+    } catch (parseError) {
+      console.error('Error parsing OpenAI response:', parseError);
+    }
+    
+    // If no topics were found, use mock data
+    if (!topics || !Array.isArray(topics) || topics.length === 0) {
+      console.warn('No topics found in the API response, using mock data');
+      const mockTopics = await mockProcessTranscript(transcript);
+      return { topics: mockTopics, usedMockData: true };
+    }
     
     console.log('Extracted topics:', topics);
     return { topics, usedMockData: false };
@@ -112,7 +129,24 @@ export const findLinksForTopics = async (topics: string[], apiKey?: string): Pro
     }
 
     const data = await response.json();
-    const processedTopics = JSON.parse(data.choices[0].message.content).topics;
+    let processedTopics = [];
+    
+    try {
+      // Try to parse the response content
+      if (data.choices && data.choices[0] && data.choices[0].message && data.choices[0].message.content) {
+        const content = JSON.parse(data.choices[0].message.content);
+        processedTopics = content.topics || [];
+      }
+    } catch (parseError) {
+      console.error('Error parsing OpenAI response:', parseError);
+    }
+    
+    // If no processed topics were found, use mock data
+    if (!processedTopics || !Array.isArray(processedTopics) || processedTopics.length === 0) {
+      console.warn('No processed topics found in the API response, using mock data');
+      const mockTopics = await mockFindLinksForTopics(topics);
+      return { processedTopics: mockTopics, usedMockData: true };
+    }
     
     return { processedTopics, usedMockData: false };
   } catch (error) {
