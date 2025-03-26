@@ -26,7 +26,10 @@ const LinkSummary: React.FC<LinkSummaryProps> = ({ links }) => {
     ];
     
     checkedLinks.forEach(link => {
-      lines.push(`${link.topic}: ${link.url}`);
+      lines.push(`${link.topic}: ${link.title}`);
+      lines.push(`  ${link.url}`);
+      lines.push(`  ${link.description}`);
+      lines.push('');
     });
     
     return lines.join('\n');
@@ -39,7 +42,10 @@ const LinkSummary: React.FC<LinkSummaryProps> = ({ links }) => {
     ];
     
     checkedLinks.forEach(link => {
-      lines.push(`  <li><strong>${link.topic}</strong>: <a href="${link.url}" target="_blank">${link.title}</a></li>`);
+      lines.push(`  <li>`);
+      lines.push(`    <strong>${link.topic}</strong>: <a href="${link.url}" target="_blank">${link.title}</a>`);
+      lines.push(`    <p>${link.description}</p>`);
+      lines.push(`  </li>`);
     });
     
     lines.push('</ul>');

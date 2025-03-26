@@ -44,14 +44,14 @@ const LinksList: React.FC<LinksListProps> = ({ links, onLinkToggle, usedMockData
       </CardHeader>
       <CardContent>
         {usedMockData && (
-          <Alert variant="warning" className="mb-4">
+          <Alert className="mb-4">
             <AlertCircle className="h-4 w-4" />
             <AlertDescription>
               Using example links because of an API key issue. Please check your OpenAI API key.
             </AlertDescription>
           </Alert>
         )}
-        <ScrollArea className="max-h-[400px] pr-4">
+        <ScrollArea className="h-[400px] pr-4">
           <div className="space-y-4">
             {Object.entries(groupedLinks).map(([topic, topicLinks], topicIndex) => (
               <div key={topic} className="link-enter" style={{ animationDelay: `${topicIndex * 100}ms` }}>
