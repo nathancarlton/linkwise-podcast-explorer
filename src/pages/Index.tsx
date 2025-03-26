@@ -84,32 +84,18 @@ const Index = () => {
         return;
       }
       
-      // Make sure the topic has links before processing
-      if (processedTopic.links.length > 0) {
-        processedTopic.links.forEach(link => {
-          if (!link) return;
-          
-          // Create a title that doesn't repeat the topic name
-          let title = link.title || 'Untitled Link';
-          
-          // Remove topic from beginning of title if it exists
-          if (title.toLowerCase().startsWith(processedTopic.topic.toLowerCase())) {
-            // Extract the remainder after the topic
-            const remainder = title.substring(processedTopic.topic.length).trim();
-            // Remove any leading separators like ":" or "-"
-            title = remainder.replace(/^[-:]\s*/, '').trim() || title;
-          }
-          
-          linkItems.push({
-            id: uuidv4(),
-            topic: processedTopic.topic || 'Unknown Topic',
-            url: link.url || '#',
-            title: title,
-            description: link.description || 'No description available',
-            checked: true, // Default to checked
-          });
+      processedTopic.links.forEach(link => {
+        if (!link) return;
+        
+        linkItems.push({
+          id: uuidv4(),
+          topic: processedTopic.topic || 'Unknown Topic',
+          url: link.url || '#',
+          title: link.title || 'Untitled Link',
+          description: link.description || 'No description available',
+          checked: true, // Default to checked
         });
-      }
+      });
     });
     
     return linkItems;
