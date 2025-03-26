@@ -34,13 +34,10 @@ const LinksList: React.FC<LinksListProps> = ({ links, onLinkToggle, usedMockData
     return acc;
   }, {});
 
-  // Count total number of links
-  const totalLinks = Object.values(groupedLinks).reduce((count, links) => count + links.length, 0);
-
   return (
     <Card className="w-full mt-6 animate-slide-up">
       <CardHeader>
-        <CardTitle>Discovered Links ({totalLinks})</CardTitle>
+        <CardTitle>Discovered Links</CardTitle>
       </CardHeader>
       <CardContent>
         {usedMockData && (
@@ -56,7 +53,7 @@ const LinksList: React.FC<LinksListProps> = ({ links, onLinkToggle, usedMockData
             {Object.entries(groupedLinks).map(([topic, topicLinks], topicIndex) => (
               <div key={topic} className="link-enter" style={{ animationDelay: `${topicIndex * 100}ms` }}>
                 <div className="flex flex-col space-y-3 bg-secondary/40 p-4 rounded-lg">
-                  <h3 className="font-medium text-lg">{topic} ({topicLinks.length})</h3>
+                  <h3 className="font-medium text-lg">{topic}</h3>
                   
                   {topicLinks.map((link, linkIndex) => (
                     <div key={link.id} className="flex items-start space-x-3 pl-2 transition-colors hover:bg-secondary/60 p-2 rounded">
