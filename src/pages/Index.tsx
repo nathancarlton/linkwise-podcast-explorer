@@ -33,7 +33,7 @@ const Index = () => {
       // Extract topics from transcript
       const { topics, usedMockData: usedMockForTopics } = await processTranscript(transcript, apiKey);
       
-      if (topics.length === 0) {
+      if (!topics || topics.length === 0) {
         toast.error('No relevant topics found in the transcript');
         setProcessingStage(ProcessingStage.Initial);
         return;
@@ -47,7 +47,7 @@ const Index = () => {
       setUsedMockData(usedMockForTopics || usedMockForLinks);
       
       // Convert processed topics to link items
-      const linkItems = processTopicsToLinkItems(processedTopics);
+      const linkItems = processTopicsToLinkItems(processedTopics || []);
       
       setLinks(linkItems);
       setProcessingStage(ProcessingStage.Complete);
@@ -56,7 +56,7 @@ const Index = () => {
         if (usedMockForTopics || usedMockForLinks) {
           toast.warning('Generated example links - API key may be invalid');
         } else {
-          toast.success(`Found ${linkItems.length} links across ${processedTopics.length} topics`);
+          toast.success(`Found ${linkItems.length} links across ${processedTopics?.length || 0} topics`);
         }
       } else {
         toast.error('No links found for the extracted topics');
@@ -72,14 +72,27 @@ const Index = () => {
   const processTopicsToLinkItems = (processedTopics: ProcessedTopic[]): LinkItem[] => {
     const linkItems: LinkItem[] = [];
     
+    if (!processedTopics || !Array.isArray(processedTopics)) {
+      console.error('Invalid processedTopics:', processedTopics);
+      return [];
+    }
+    
     processedTopics.forEach((processedTopic: ProcessedTopic) => {
+      // Skip if topic is undefined or links array is missing
+      if (!processedTopic || !processedTopic.links || !Array.isArray(processedTopic.links)) {
+        console.warn('Invalid topic object:', processedTopic);
+        return;
+      }
+      
       processedTopic.links.forEach(link => {
+        if (!link) return;
+        
         linkItems.push({
           id: uuidv4(),
-          topic: processedTopic.topic,
-          url: link.url,
-          title: link.title,
-          description: link.description,
+          topic: processedTopic.topic || 'Unknown Topic',
+          url: link.url || '#',
+          title: link.title || 'Untitled Link',
+          description: link.description || 'No description available',
           checked: true, // Default to checked
         });
       });

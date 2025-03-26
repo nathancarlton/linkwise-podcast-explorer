@@ -5,13 +5,14 @@ import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { LinkItem } from '@/types';
 import { toast } from 'sonner';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 interface LinkSummaryProps {
   links: LinkItem[];
 }
 
 const LinkSummary: React.FC<LinkSummaryProps> = ({ links }) => {
-  const [activeTab, setActiveTab] = useState('markdown');
+  const [activeTab, setActiveTab] = useState('formatted');
   
   const checkedLinks = links.filter(link => link.checked);
   
@@ -68,6 +69,26 @@ const LinkSummary: React.FC<LinkSummaryProps> = ({ links }) => {
     return lines.join('\n');
   };
   
+  // Render markdown as formatted HTML for preview
+  const renderFormattedMarkdown = () => {
+    return (
+      <div className="prose dark:prose-invert max-w-none">
+        <h1>Links mentioned in this episode</h1>
+        {checkedLinks.map((link, index) => (
+          <div key={index} className="mb-6">
+            <h2>{link.topic}</h2>
+            <p>
+              <a href={link.url} target="_blank" rel="noreferrer" className="font-medium underline">
+                {link.title}
+              </a>
+            </p>
+            <p>{link.description}</p>
+          </div>
+        ))}
+      </div>
+    );
+  };
+  
   const markdownSummary = generateMarkdownSummary();
   const textSummary = generateTextSummary();
   const htmlSummary = generateHtmlSummary();
@@ -88,16 +109,31 @@ const LinkSummary: React.FC<LinkSummaryProps> = ({ links }) => {
       </CardHeader>
       <CardContent>
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid grid-cols-3 mb-4">
+          <TabsList className="grid grid-cols-4 mb-4">
+            <TabsTrigger value="formatted">Formatted</TabsTrigger>
             <TabsTrigger value="markdown">Markdown</TabsTrigger>
             <TabsTrigger value="text">Plain Text</TabsTrigger>
             <TabsTrigger value="html">HTML</TabsTrigger>
           </TabsList>
           
+          <TabsContent value="formatted" className="space-y-4">
+            <ScrollArea className="h-[300px] rounded-md border p-4">
+              {renderFormattedMarkdown()}
+            </ScrollArea>
+            <Button 
+              onClick={() => copyToClipboard(markdownSummary, 'Formatted summary')}
+              className="w-full transition-all hover:bg-primary/90"
+            >
+              Copy Formatted Summary
+            </Button>
+          </TabsContent>
+          
           <TabsContent value="markdown" className="space-y-4">
-            <div className="p-4 bg-secondary/40 rounded-lg font-mono text-sm overflow-x-auto whitespace-pre-wrap">
-              {markdownSummary}
-            </div>
+            <ScrollArea className="h-[300px] rounded-md border">
+              <div className="p-4 bg-secondary/40 font-mono text-sm overflow-x-auto whitespace-pre-wrap">
+                {markdownSummary}
+              </div>
+            </ScrollArea>
             <Button 
               onClick={() => copyToClipboard(markdownSummary, 'Markdown summary')}
               className="w-full transition-all hover:bg-primary/90"
@@ -107,9 +143,11 @@ const LinkSummary: React.FC<LinkSummaryProps> = ({ links }) => {
           </TabsContent>
           
           <TabsContent value="text" className="space-y-4">
-            <div className="p-4 bg-secondary/40 rounded-lg font-mono text-sm overflow-x-auto whitespace-pre-wrap">
-              {textSummary}
-            </div>
+            <ScrollArea className="h-[300px] rounded-md border">
+              <div className="p-4 bg-secondary/40 font-mono text-sm overflow-x-auto whitespace-pre-wrap">
+                {textSummary}
+              </div>
+            </ScrollArea>
             <Button 
               onClick={() => copyToClipboard(textSummary, 'Text summary')}
               className="w-full transition-all hover:bg-primary/90"
@@ -119,9 +157,11 @@ const LinkSummary: React.FC<LinkSummaryProps> = ({ links }) => {
           </TabsContent>
           
           <TabsContent value="html" className="space-y-4">
-            <div className="p-4 bg-secondary/40 rounded-lg font-mono text-sm overflow-x-auto whitespace-pre-wrap">
-              {htmlSummary}
-            </div>
+            <ScrollArea className="h-[300px] rounded-md border">
+              <div className="p-4 bg-secondary/40 font-mono text-sm overflow-x-auto whitespace-pre-wrap">
+                {htmlSummary}
+              </div>
+            </ScrollArea>
             <Button 
               onClick={() => copyToClipboard(htmlSummary, 'HTML summary')}
               className="w-full transition-all hover:bg-primary/90"
