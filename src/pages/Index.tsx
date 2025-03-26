@@ -84,14 +84,30 @@ const Index = () => {
         return;
       }
       
+      const topicName = processedTopic.topic || 'Unknown Topic';
+      
       processedTopic.links.forEach(link => {
         if (!link) return;
         
+        // Clean up title - remove redundant topic name from beginning of title
+        let title = link.title || 'Untitled Link';
+        
+        // Check if title starts with the topic name
+        if (title.startsWith(topicName) && title.length > topicName.length) {
+          // Remove topic name and any separator (like " - " or ": ")
+          title = title.substring(topicName.length).replace(/^[\s-:]+/, '').trim();
+        }
+        
+        // If title became empty after cleanup, use the original
+        if (!title.trim()) {
+          title = link.title || 'Untitled Link';
+        }
+        
         linkItems.push({
           id: uuidv4(),
-          topic: processedTopic.topic || 'Unknown Topic',
+          topic: topicName,
           url: link.url || '#',
-          title: link.title || 'Untitled Link',
+          title: title,
           description: link.description || 'No description available',
           checked: true, // Default to checked
         });
