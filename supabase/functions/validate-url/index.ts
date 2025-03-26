@@ -65,6 +65,159 @@ async function storeUrlCache(url: string, isValid: boolean, metadata: any) {
   }
 }
 
+// Detect common 404/error page patterns in HTML content
+function detectErrorPage(html: string, url: string): boolean {
+  // Convert to lowercase for case-insensitive matching
+  const lowercaseHtml = html.toLowerCase();
+  
+  // Common error page indicators
+  const errorPatterns = [
+    'page not found',
+    'cannot be found',
+    'could not be found',
+    'doesn\'t exist',
+    'does not exist',
+    'no longer available',
+    'no longer exists',
+    'been removed',
+    'error 404',
+    '404 error',
+    'not found error',
+    'page doesn\'t exist',
+    'page does not exist',
+    'content not found',
+    'not available',
+    'page unavailable',
+    'sorry, we couldn\'t find',
+    'page has moved',
+    'page may have been moved',
+    'moved permanently',
+    'page has been deleted',
+    'nicht gefunden', // German
+    'no encontrada', // Spanish
+    'introuvable', // French
+    'non trovata', // Italian
+    '見つかりません', // Japanese
+    '找不到', // Chinese
+    'не найдена', // Russian
+    'content has moved',
+    'page missing',
+    'invalid url',
+    'broken link',
+    'page has expired',
+    'requested url was not found',
+    'wrong address',
+    'went wrong',
+    'oops',
+    'something went wrong',
+    'cannot access',
+    'unable to access',
+    'url changed',
+    'has been deleted',
+    'has been removed',
+    'nothing found',
+    'search did not return',
+    'empty search results',
+    'no results found',
+    'no items found'
+  ];
+  
+  // HBR-specific patterns
+  if (url.includes('hbr.org')) {
+    const hbrPatterns = [
+      'sign in to continue reading',
+      'you\'ve reached your monthly limit',
+      'subscribe to continue reading',
+      'register to continue reading',
+      'this article is about',
+      'access to this page has been denied',
+      'access denied',
+      'article not found'
+    ];
+    
+    for (const pattern of hbrPatterns) {
+      if (lowercaseHtml.includes(pattern)) {
+        console.log(`HBR-specific error pattern found for ${url}: ${pattern}`);
+        return true;
+      }
+    }
+  }
+  
+  // McKinsey-specific patterns
+  if (url.includes('mckinsey.com')) {
+    const mckinseyPatterns = [
+      'page you are looking for is unavailable',
+      'page you requested cannot be found',
+      'we can\'t find the page',
+      'moved to a new location',
+      'this content has moved',
+      'has been transferred',
+      'this article is no longer available'
+    ];
+    
+    for (const pattern of mckinseyPatterns) {
+      if (lowercaseHtml.includes(pattern)) {
+        console.log(`McKinsey-specific error pattern found for ${url}: ${pattern}`);
+        return true;
+      }
+    }
+  }
+  
+  // Nature-specific patterns
+  if (url.includes('nature.com')) {
+    const naturePatterns = [
+      'page not found',
+      'cited incorrect doi',
+      'might have been removed',
+      'content unavailable',
+      'article has been withdrawn'
+    ];
+    
+    for (const pattern of naturePatterns) {
+      if (lowercaseHtml.includes(pattern)) {
+        console.log(`Nature-specific error pattern found for ${url}: ${pattern}`);
+        return true;
+      }
+    }
+  }
+  
+  // Forbes-specific patterns
+  if (url.includes('forbes.com')) {
+    const forbesPatterns = [
+      'page no longer exists',
+      'page has been removed',
+      'page has moved',
+      'incorrect url',
+      'article not found',
+      'oops, the page you were looking for'
+    ];
+    
+    for (const pattern of forbesPatterns) {
+      if (lowercaseHtml.includes(pattern)) {
+        console.log(`Forbes-specific error pattern found for ${url}: ${pattern}`);
+        return true;
+      }
+    }
+  }
+  
+  // Check for meta title/description error indicators
+  if (/<title[^>]*>.*?(?:404|not found|error|unavailable|missing|oops).*?<\/title>/i.test(html)) {
+    console.log(`Error indication found in title tag for ${url}`);
+    return true;
+  }
+  
+  // Check for standard error patterns
+  for (const pattern of errorPatterns) {
+    if (lowercaseHtml.includes(pattern)) {
+      console.log(`Standard error pattern found for ${url}: ${pattern}`);
+      return true;
+    }
+  }
+  
+  // If none of the error patterns were found, it's likely a valid page
+  return false;
+}
+
 // Try to validate URL using public SearXNG instances
 async function validateUrlWithPublicSearXNG(url: string) {
   try {
@@ -154,11 +307,147 @@ async function validateUrlWithPublicSearXNG(url: string) {
     }
     
     // If all SearXNG instances fail, fall back to basic validation
-    console.warn(`All SearXNG instances failed for ${url}, falling back to basic validation`);
-    return basicValidateUrl(url);
+    console.warn(`All SearXNG instances failed for ${url}, falling back to deep validation`);
+    return deepValidateUrl(url);
   } catch (error) {
     console.warn(`URL parsing error for ${url}:`, error);
     return { isValid: false, metadata: { error: error.message } };
+  }
+}
+
+// Deep URL validation that checks content for error patterns
+async function deepValidateUrl(url: string) {
+  try {
+    // Try to parse the URL first
+    new URL(url);
+    
+    // Check if URL is reachable and examine content
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+    
+    try {
+      // First try with a normal HEAD request
+      const headResponse = await fetch(url, {
+        method: 'HEAD',
+        signal: controller.signal,
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+          'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+          'Accept-Language': 'en-US,en;q=0.5',
+        }
+      });
+      
+      // If we got a non-200 status code, the URL is likely invalid
+      if (!headResponse.ok) {
+        clearTimeout(timeoutId);
+        console.warn(`HEAD request failed for ${url}: ${headResponse.status} ${headResponse.statusText}`);
+        return { 
+          isValid: false, 
+          metadata: { 
+            status: headResponse.status,
+            statusText: headResponse.statusText,
+            source: 'head_request' 
+          } 
+        };
+      }
+      
+      // Now make a GET request to check the content
+      const getResponse = await fetch(url, {
+        method: 'GET',
+        signal: controller.signal,
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+          'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+          'Accept-Language': 'en-US,en;q=0.5',
+        }
+      });
+      
+      clearTimeout(timeoutId);
+      
+      // Consider 2xx status codes as potentially valid
+      if (!getResponse.ok) {
+        console.warn(`GET request failed for ${url}: ${getResponse.status} ${getResponse.statusText}`);
+        return { 
+          isValid: false, 
+          metadata: {
+            status: getResponse.status,
+            statusText: getResponse.statusText,
+            source: 'get_request' 
+          } 
+        };
+      }
+      
+      // Check content type - we mainly care about HTML pages
+      const contentType = getResponse.headers.get('content-type') || '';
+      
+      // Extract some basic metadata from headers
+      const metadata: any = {
+        contentType,
+        server: getResponse.headers.get('server'),
+        lastModified: getResponse.headers.get('last-modified'),
+        source: 'deep_validation'
+      };
+      
+      // For HTML content, check for 404 indicators in the content
+      if (contentType.includes('text/html')) {
+        const html = await getResponse.text();
+        
+        // Check for error page indicators in the HTML
+        if (detectErrorPage(html, url)) {
+          console.warn(`Error page detected for ${url} despite 200 status code`);
+          return { 
+            isValid: false, 
+            metadata: {
+              ...metadata,
+              reason: 'Error page detected in content'
+            } 
+          };
+        }
+        
+        // Try to extract title from HTML
+        const titleMatch = html.match(/<title[^>]*>(.*?)<\/title>/i);
+        if (titleMatch && titleMatch[1]) {
+          metadata.title = titleMatch[1].trim();
+          
+          // Check for error indicators in title
+          const errorTitlePatterns = [
+            '404', 'error', 'not found', 'unavailable', 'missing',
+            'oops', 'sorry'
+          ];
+          
+          const lowerTitle = metadata.title.toLowerCase();
+          if (errorTitlePatterns.some(pattern => lowerTitle.includes(pattern))) {
+            console.warn(`Error indicator found in title for ${url}: "${metadata.title}"`);
+            return { 
+              isValid: false, 
+              metadata: {
+                ...metadata,
+                reason: `Error indicator in title: "${metadata.title}"`
+              } 
+            };
+          }
+        }
+        
+        // Try to extract meta description
+        const descMatch = html.match(/<meta[^>]*name=["']description["'][^>]*content=["']([^"']*)["'][^>]*>/i);
+        if (descMatch && descMatch[1]) {
+          metadata.description = descMatch[1].trim();
+        }
+        
+        // URL is valid if we got here
+        return { isValid: true, metadata };
+      }
+      
+      // For non-HTML content, we'll trust the 200 status code
+      return { isValid: true, metadata };
+    } catch (fetchError) {
+      clearTimeout(timeoutId);
+      console.warn(`Fetch error for ${url}:`, fetchError);
+      return { isValid: false, metadata: { error: fetchError.message, source: 'deep_validation' } };
+    }
+  } catch (error) {
+    console.warn(`URL parsing error for ${url}:`, error);
+    return { isValid: false, metadata: { error: error.message, source: 'deep_validation' } };
   }
 }
 
@@ -217,7 +506,8 @@ serve(async (req) => {
 
   try {
     // Parse request body
-    const { url } = await req.json();
+    const body = await req.json();
+    const { url, deepValidation = false } = body;
     
     if (!url) {
       return new Response(
@@ -226,30 +516,44 @@ serve(async (req) => {
       );
     }
     
-    // Check cache first
-    const cachedResult = await checkUrlCache(url);
-    if (cachedResult) {
-      console.log(`Cache hit for URL: ${url}`);
-      return new Response(
-        JSON.stringify({ 
-          isValid: cachedResult.is_valid, 
-          metadata: cachedResult.metadata,
-          fromCache: true 
-        }),
-        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+    // Check cache first, but skip if deep validation is requested
+    if (!deepValidation) {
+      const cachedResult = await checkUrlCache(url);
+      if (cachedResult) {
+        console.log(`Cache hit for URL: ${url}`);
+        return new Response(
+          JSON.stringify({ 
+            isValid: cachedResult.is_valid, 
+            metadata: cachedResult.metadata,
+            fromCache: true 
+          }),
+          { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
     }
     
-    console.log(`Cache miss for URL: ${url}, validating...`);
+    console.log(`Cache miss or deep validation for URL: ${url}, validating...`);
     
-    // Validate URL using public SearXNG instances with fallback to basic validation
-    const { isValid, metadata } = await validateUrlWithPublicSearXNG(url);
+    let validationResult;
     
-    // Store result in cache
-    await storeUrlCache(url, isValid, metadata);
+    // Choose validation method based on request
+    if (deepValidation) {
+      validationResult = await deepValidateUrl(url);
+    } else {
+      // Use SearXNG first with fallback to deep validation
+      validationResult = await validateUrlWithPublicSearXNG(url);
+    }
+    
+    // Store result in cache (even from deep validation)
+    await storeUrlCache(url, validationResult.isValid, validationResult.metadata);
     
     return new Response(
-      JSON.stringify({ isValid, metadata, fromCache: false }),
+      JSON.stringify({ 
+        isValid: validationResult.isValid, 
+        metadata: validationResult.metadata, 
+        fromCache: false,
+        deepValidation: deepValidation 
+      }),
       { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   } catch (error) {
