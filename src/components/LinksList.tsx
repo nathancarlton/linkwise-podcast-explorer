@@ -17,6 +17,21 @@ const LinksList: React.FC<LinksListProps> = ({ links, onLinkToggle }) => {
     return null;
   }
 
+  // Group links by topic to avoid duplicates
+  const groupedLinks = links.reduce<Record<string, LinkItem[]>>((acc, link) => {
+    if (!acc[link.topic]) {
+      acc[link.topic] = [];
+    }
+    
+    // Check if the URL already exists in this topic group
+    const urlExists = acc[link.topic].some(existingLink => existingLink.url === link.url);
+    if (!urlExists) {
+      acc[link.topic].push(link);
+    }
+    
+    return acc;
+  }, {});
+
   return (
     <Card className="w-full mt-6 animate-slide-up">
       <CardHeader>
@@ -25,42 +40,45 @@ const LinksList: React.FC<LinksListProps> = ({ links, onLinkToggle }) => {
       <CardContent>
         <ScrollArea className="max-h-[400px] pr-4">
           <div className="space-y-4">
-            {links.map((link, index) => (
-              <div key={link.id} className="link-enter" style={{ animationDelay: `${index * 100}ms` }}>
-                <div className="flex items-start space-x-3 bg-secondary/40 p-4 rounded-lg transition-colors hover:bg-secondary">
-                  <Checkbox 
-                    id={link.id} 
-                    checked={link.checked} 
-                    onCheckedChange={(checked) => onLinkToggle(link.id, !!checked)} 
-                    className="mt-1"
-                  />
-                  <div className="flex-1">
-                    <label 
-                      htmlFor={link.id} 
-                      className="font-medium text-lg cursor-pointer hover:text-primary transition-colors"
-                    >
-                      {link.topic}
-                    </label>
-                    <div className="mt-2 pl-2 border-l-2 border-primary/20">
-                      <div className="text-sm">
-                        <span className="font-medium">{link.title}</span>
-                        <a 
-                          href={link.url} 
-                          target="_blank" 
-                          rel="noopener noreferrer" 
-                          className="flex items-center text-blue-500 hover:text-blue-700 ml-2 underline group mt-1 w-fit"
+            {Object.entries(groupedLinks).map(([topic, topicLinks], topicIndex) => (
+              <div key={topic} className="link-enter" style={{ animationDelay: `${topicIndex * 100}ms` }}>
+                <div className="flex flex-col space-y-3 bg-secondary/40 p-4 rounded-lg">
+                  <h3 className="font-medium text-lg">{topic}</h3>
+                  
+                  {topicLinks.map((link, linkIndex) => (
+                    <div key={link.id} className="flex items-start space-x-3 pl-2 transition-colors hover:bg-secondary/60 p-2 rounded">
+                      <Checkbox 
+                        id={link.id} 
+                        checked={link.checked} 
+                        onCheckedChange={(checked) => onLinkToggle(link.id, !!checked)} 
+                        className="mt-1"
+                      />
+                      <div className="flex-1">
+                        <label 
+                          htmlFor={link.id} 
+                          className="font-medium cursor-pointer hover:text-primary transition-colors"
                         >
-                          <span className="truncate max-w-[300px]">{link.url}</span>
-                          <ExternalLink className="ml-1 h-3 w-3 opacity-70 group-hover:opacity-100 transition-opacity" />
-                        </a>
+                          {link.title}
+                        </label>
+                        <div className="mt-1">
+                          <a 
+                            href={link.url} 
+                            target="_blank" 
+                            rel="noopener noreferrer" 
+                            className="flex items-center text-blue-500 hover:text-blue-700 underline group w-fit"
+                          >
+                            <span className="truncate max-w-[300px]">{link.url}</span>
+                            <ExternalLink className="ml-1 h-3 w-3 opacity-70 group-hover:opacity-100 transition-opacity" />
+                          </a>
+                          <p className="text-sm text-muted-foreground mt-1">
+                            {link.description}
+                          </p>
+                        </div>
                       </div>
-                      <p className="text-sm text-muted-foreground mt-1">
-                        {link.description}
-                      </p>
                     </div>
-                  </div>
+                  ))}
                 </div>
-                {index < links.length - 1 && <Separator className="my-4" />}
+                {topicIndex < Object.keys(groupedLinks).length - 1 && <Separator className="my-4" />}
               </div>
             ))}
           </div>

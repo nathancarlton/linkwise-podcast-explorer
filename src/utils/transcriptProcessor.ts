@@ -5,8 +5,14 @@ import { ProcessedTopic } from '../types';
 export const processTranscript = async (transcript: string, apiKey?: string): Promise<string[]> => {
   console.log('Processing transcript of length:', transcript.length);
   
-  if (!apiKey) {
-    // If no API key, return mock data for demonstration
+  if (!apiKey || apiKey.trim() === '') {
+    // If no API key or empty API key, return mock data for demonstration
+    return mockProcessTranscript(transcript);
+  }
+  
+  // Validate API key format
+  if (!apiKey.startsWith('sk-') || apiKey.length < 20) {
+    console.error('Invalid API key format');
     return mockProcessTranscript(transcript);
   }
   
@@ -18,7 +24,7 @@ export const processTranscript = async (transcript: string, apiKey?: string): Pr
         'Authorization': `Bearer ${apiKey}`
       },
       body: JSON.stringify({
-        model: 'gpt-4o',
+        model: 'gpt-4o-mini',
         messages: [
           {
             role: 'system',
@@ -56,8 +62,14 @@ export const processTranscript = async (transcript: string, apiKey?: string): Pr
 export const findLinksForTopics = async (topics: string[], apiKey?: string): Promise<ProcessedTopic[]> => {
   console.log('Finding links for topics:', topics);
   
-  if (!apiKey) {
-    // If no API key, return mock data for demonstration
+  if (!apiKey || apiKey.trim() === '') {
+    // If no API key or empty API key, return mock data for demonstration
+    return mockFindLinksForTopics(topics);
+  }
+  
+  // Validate API key format
+  if (!apiKey.startsWith('sk-') || apiKey.length < 20) {
+    console.error('Invalid API key format');
     return mockFindLinksForTopics(topics);
   }
   
@@ -69,7 +81,7 @@ export const findLinksForTopics = async (topics: string[], apiKey?: string): Pro
         'Authorization': `Bearer ${apiKey}`
       },
       body: JSON.stringify({
-        model: 'gpt-4o',
+        model: 'gpt-4o-mini',
         messages: [
           {
             role: 'system',
@@ -100,6 +112,59 @@ export const findLinksForTopics = async (topics: string[], apiKey?: string): Pro
     // Fallback to mock data if API call fails
     return mockFindLinksForTopics(topics);
   }
+};
+
+// Parse user-provided links in the format "topic: url"
+export const parseUserProvidedLinks = (text: string): ProcessedTopic[] => {
+  // Check if text contains the pattern of "topic: url"
+  if (!text.includes(':')) {
+    return [];
+  }
+
+  const lines = text.split('\n').filter(line => line.trim().length > 0);
+  const topicMap = new Map<string, Set<string>>();
+  
+  // Extract topics and URLs
+  lines.forEach(line => {
+    const match = line.match(/^(.*?):\s*(https?:\/\/[^\s]+)$/);
+    if (match) {
+      const topic = match[1].trim();
+      const url = match[2].trim();
+      
+      if (!topicMap.has(topic)) {
+        topicMap.set(topic, new Set());
+      }
+      
+      topicMap.get(topic)?.add(url);
+    }
+  });
+  
+  // Convert to ProcessedTopic format
+  const processedTopics: ProcessedTopic[] = [];
+  topicMap.forEach((urls, topic) => {
+    const links = Array.from(urls).map(url => {
+      // Generate a title based on URL and topic
+      const urlObj = new URL(url);
+      const domain = urlObj.hostname.replace(/^www\./, '');
+      const path = urlObj.pathname.split('/').filter(Boolean).join(' ');
+      const title = path 
+        ? `${topic} - ${path.charAt(0).toUpperCase() + path.slice(1)}` 
+        : `${topic} - Official Resource`;
+      
+      return {
+        url,
+        title,
+        description: `Resource about ${topic} from ${domain}`,
+      };
+    });
+    
+    processedTopics.push({
+      topic,
+      links,
+    });
+  });
+  
+  return processedTopics;
 };
 
 // Mock implementation for fallback or demo purposes

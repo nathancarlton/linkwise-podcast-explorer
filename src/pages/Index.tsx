@@ -6,7 +6,11 @@ import LinksList from '@/components/LinksList';
 import LinkSummary from '@/components/LinkSummary';
 import ApiKeyInput from '@/components/ApiKeyInput';
 import { Separator } from '@/components/ui/separator';
-import { processTranscript, findLinksForTopics } from '@/utils/transcriptProcessor';
+import { 
+  processTranscript, 
+  findLinksForTopics, 
+  parseUserProvidedLinks 
+} from '@/utils/transcriptProcessor';
 import { LinkItem, ProcessingStage, ProcessedTopic } from '@/types';
 import { toast } from 'sonner';
 
@@ -39,19 +43,7 @@ const Index = () => {
       const processedTopics = await findLinksForTopics(topics, apiKey);
       
       // Convert processed topics to link items
-      const linkItems: LinkItem[] = [];
-      processedTopics.forEach((processedTopic: ProcessedTopic) => {
-        processedTopic.links.forEach(link => {
-          linkItems.push({
-            id: uuidv4(),
-            topic: processedTopic.topic,
-            url: link.url,
-            title: link.title,
-            description: link.description,
-            checked: true, // Default to checked
-          });
-        });
-      });
+      const linkItems = processTopicsToLinkItems(processedTopics);
       
       setLinks(linkItems);
       setProcessingStage(ProcessingStage.Complete);
@@ -66,6 +58,54 @@ const Index = () => {
       toast.error('An error occurred while processing the transcript');
       setProcessingStage(ProcessingStage.Initial);
     }
+  };
+
+  const handleProcessLinks = (linksText: string) => {
+    try {
+      setProcessingStage(ProcessingStage.FindingLinks);
+      setLinks([]);
+      
+      // Parse user-provided links
+      const processedTopics = parseUserProvidedLinks(linksText);
+      
+      if (processedTopics.length === 0) {
+        toast.error('No valid links found in the provided text');
+        setProcessingStage(ProcessingStage.Initial);
+        return;
+      }
+      
+      // Convert processed topics to link items
+      const linkItems = processTopicsToLinkItems(processedTopics);
+      
+      setLinks(linkItems);
+      setProcessingStage(ProcessingStage.Complete);
+      
+      toast.success(`Processed ${linkItems.length} links across ${processedTopics.length} topics`);
+    } catch (error) {
+      console.error('Error processing links:', error);
+      toast.error('An error occurred while processing the links');
+      setProcessingStage(ProcessingStage.Initial);
+    }
+  };
+
+  // Helper function to convert processed topics to link items
+  const processTopicsToLinkItems = (processedTopics: ProcessedTopic[]): LinkItem[] => {
+    const linkItems: LinkItem[] = [];
+    
+    processedTopics.forEach((processedTopic: ProcessedTopic) => {
+      processedTopic.links.forEach(link => {
+        linkItems.push({
+          id: uuidv4(),
+          topic: processedTopic.topic,
+          url: link.url,
+          title: link.title,
+          description: link.description,
+          checked: true, // Default to checked
+        });
+      });
+    });
+    
+    return linkItems;
   };
 
   const handleLinkToggle = (id: string, checked: boolean) => {
@@ -97,7 +137,8 @@ const Index = () => {
         <ApiKeyInput onApiKeySave={handleApiKeySave} />
         
         <TranscriptInput 
-          onProcess={handleProcessTranscript} 
+          onProcess={handleProcessTranscript}
+          onProcessLinks={handleProcessLinks}
           processingStage={processingStage}
         />
         
