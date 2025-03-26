@@ -9,13 +9,43 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      url_cache: {
+        Row: {
+          cached_at: string
+          id: string
+          is_valid: boolean
+          metadata: Json | null
+          url: string
+        }
+        Insert: {
+          cached_at?: string
+          id?: string
+          is_valid: boolean
+          metadata?: Json | null
+          url: string
+        }
+        Update: {
+          cached_at?: string
+          id?: string
+          is_valid?: boolean
+          metadata?: Json | null
+          url?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      ensure_url_cache_exists: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
+      run_migration: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
     }
     Enums: {
       [_ in never]: never

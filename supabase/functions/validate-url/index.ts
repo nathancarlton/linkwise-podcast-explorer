@@ -12,13 +12,9 @@ const supabaseUrl = Deno.env.get('SUPABASE_URL') || '';
 const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY') || '';
 const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
-// Create a cache table if it doesn't exist yet
-async function ensureCacheTableExists() {
-  const { error } = await supabase.rpc('ensure_url_cache_exists');
-  if (error) {
-    console.error('Error ensuring cache table exists:', error);
-  }
-}
+// Define the SearXNG instance URL
+// The user will need to provide this
+const searxngInstance = Deno.env.get('SEARXNG_INSTANCE') || 'https://searx.example.org';
 
 // Check if URL exists in cache
 async function checkUrlCache(url: string) {
@@ -63,7 +59,99 @@ async function storeUrlCache(url: string, isValid: boolean, metadata: any) {
   }
 }
 
-// Basic URL validation without external API
+// Validate URL using SearXNG
+async function validateUrlWithSearXNG(url: string) {
+  try {
+    // Try to parse the URL first
+    new URL(url);
+    
+    // Check if SearXNG instance is configured
+    if (!searxngInstance || searxngInstance === 'https://searx.example.org') {
+      console.warn('SearXNG instance not configured, falling back to basic validation');
+      return basicValidateUrl(url);
+    }
+    
+    try {
+      // Construct the SearXNG search API URL
+      const searchUrl = `${searxngInstance}/search`;
+      
+      // Make a request to SearXNG API
+      const response = await fetch(searchUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+          'Accept': 'application/json',
+          'User-Agent': 'URLValidator/1.0'
+        },
+        body: new URLSearchParams({
+          q: url,
+          format: 'json',
+          engines: 'google',
+          time_range: '',
+          language: 'en-US',
+          safesearch: '0'
+        })
+      });
+      
+      if (!response.ok) {
+        console.warn(`SearXNG API error for ${url}: ${response.status} ${response.statusText}`);
+        return basicValidateUrl(url);
+      }
+      
+      const searchData = await response.json();
+      
+      // Check if the URL appears in the results
+      const results = searchData.results || [];
+      const foundInResults = results.some((result: any) => {
+        const resultUrl = result.url || '';
+        return resultUrl.includes(url) || url.includes(resultUrl);
+      });
+      
+      // If the URL is in the results, it's valid
+      if (foundInResults) {
+        // Get the first result that matches as metadata
+        const matchingResult = results.find((result: any) => {
+          const resultUrl = result.url || '';
+          return resultUrl.includes(url) || url.includes(resultUrl);
+        });
+        
+        const metadata = matchingResult ? {
+          title: matchingResult.title,
+          description: matchingResult.content,
+          source: 'searxng'
+        } : { 
+          source: 'searxng',
+          info: 'URL found in search results but no detailed metadata available'
+        };
+        
+        return { isValid: true, metadata };
+      }
+      
+      // If we have results but our URL isn't among them, it might be invalid
+      if (results.length > 0) {
+        return { 
+          isValid: false, 
+          metadata: { 
+            source: 'searxng',
+            info: 'URL not found in search results' 
+          } 
+        };
+      }
+      
+      // If there are no results at all, fall back to basic validation
+      console.warn(`No SearXNG results for ${url}, falling back to basic validation`);
+      return basicValidateUrl(url);
+    } catch (searxError) {
+      console.warn(`SearXNG validation error for ${url}:`, searxError);
+      return basicValidateUrl(url);
+    }
+  } catch (error) {
+    console.warn(`URL parsing error for ${url}:`, error);
+    return { isValid: false, metadata: { error: error.message } };
+  }
+}
+
+// Basic URL validation without external API (fallback method)
 async function basicValidateUrl(url: string) {
   try {
     // Try to parse the URL first
@@ -92,17 +180,18 @@ async function basicValidateUrl(url: string) {
         contentType: response.headers.get('content-type'),
         server: response.headers.get('server'),
         lastModified: response.headers.get('last-modified'),
+        source: 'basic_validation'
       };
       
       return { isValid, metadata };
     } catch (fetchError) {
       clearTimeout(timeoutId);
       console.warn(`Fetch error for ${url}:`, fetchError);
-      return { isValid: false, metadata: { error: fetchError.message } };
+      return { isValid: false, metadata: { error: fetchError.message, source: 'basic_validation' } };
     }
   } catch (error) {
     console.warn(`URL parsing error for ${url}:`, error);
-    return { isValid: false, metadata: { error: error.message } };
+    return { isValid: false, metadata: { error: error.message, source: 'basic_validation' } };
   }
 }
 
@@ -116,9 +205,6 @@ serve(async (req) => {
   }
 
   try {
-    // Ensure our cache table exists
-    await ensureCacheTableExists();
-    
     // Parse request body
     const { url } = await req.json();
     
@@ -145,8 +231,8 @@ serve(async (req) => {
     
     console.log(`Cache miss for URL: ${url}, validating...`);
     
-    // Validate URL using basic method (will be replaced with SearXNG later)
-    const { isValid, metadata } = await basicValidateUrl(url);
+    // Validate URL using SearXNG with fallback to basic validation
+    const { isValid, metadata } = await validateUrlWithSearXNG(url);
     
     // Store result in cache
     await storeUrlCache(url, isValid, metadata);
