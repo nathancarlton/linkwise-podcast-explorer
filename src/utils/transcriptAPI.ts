@@ -1,4 +1,3 @@
-
 import axios from 'axios';
 import { ProcessedTopic } from '../types';
 import { validateUrl } from './urlUtils';
@@ -8,15 +7,13 @@ const generateMockTopics = (transcript: string): string[] => {
   // Extract some plausible topics based on common patterns in podcasts
   const topics = [
     "Generative AI Applications",
-    "Digital Transformation",
-    "Healthcare Innovation",
+    "Digital Transformation in Healthcare",
+    "Harvard Business Review",
+    "McKinsey Research on AI",
     "AI Ethics",
     "Future of Work",
-    "TechCrunch AI Coverage",
-    "Harvard Business Review",
-    "McKinsey Digital Research",
-    "MIT Technology Review",
-    "AI in Healthcare"
+    "AI in Drug Discovery",
+    "Consumer-Centric Healthcare"
   ];
   
   return topics;
@@ -30,75 +27,20 @@ const generateMockLinks = (topics: string[]): ProcessedTopic[] => {
       context: "Discussion of how businesses are implementing generative AI for productivity gains",
       links: [
         {
-          url: "https://www.mckinsey.com/capabilities/mckinsey-digital/our-insights/tech-forward/generative-ai-a-creative-new-world",
-          title: "Generative AI: A Creative New World",
-          description: "McKinsey's comprehensive analysis of how generative AI is transforming business operations and creative workflows."
+          url: "https://hbr.org/2023/01/how-generative-ai-is-changing-creative-work",
+          title: "How Generative AI Is Changing Creative Work",
+          description: "Harvard Business Review's analysis of generative AI's impact on creative professions and business operations."
         }
       ]
     },
     {
-      topic: "AI in Healthcare",
-      context: "Exploring how AI is improving patient outcomes and healthcare operations",
+      topic: "Digital Transformation in Healthcare",
+      context: "Highlighted the ongoing changes in healthcare due to digital technologies",
       links: [
         {
-          url: "https://www.nature.com/articles/s41746-020-00376-2",
-          title: "Artificial intelligence in healthcare: transforming the practice of medicine",
-          description: "Nature's in-depth review of AI applications in healthcare, from diagnostics to treatment planning."
-        }
-      ]
-    },
-    {
-      topic: "Future of Work",
-      context: "How AI and automation are reshaping career paths and workplaces",
-      links: [
-        {
-          url: "https://hbr.org/2022/11/the-new-rules-of-work",
-          title: "The New Rules of Work",
-          description: "Harvard Business Review's analysis of how technological change is redefining work norms and career development."
-        }
-      ]
-    },
-    {
-      topic: "AI Ethics",
-      context: "Discussion about responsible AI development and governance frameworks",
-      links: [
-        {
-          url: "https://www.ieee.org/about/corporate/governance/p7000.html",
-          title: "IEEE Global Initiative on Ethics of AI Systems",
-          description: "IEEE's framework for ethical considerations in autonomous and intelligent systems development."
-        }
-      ]
-    },
-    {
-      topic: "TechCrunch AI Coverage",
-      context: "Referenced as a source for staying current with AI industry developments",
-      links: [
-        {
-          url: "https://techcrunch.com/category/artificial-intelligence/",
-          title: "TechCrunch AI Coverage",
-          description: "The latest news, analysis and developments in artificial intelligence from TechCrunch's editorial team."
-        }
-      ]
-    },
-    {
-      topic: "Digital Transformation",
-      context: "How organizations are implementing technology to reinvent business processes",
-      links: [
-        {
-          url: "https://www.mckinsey.com/business-functions/mckinsey-digital/our-insights/the-digital-transformation-collection",
-          title: "The Digital Transformation Collection",
-          description: "McKinsey's comprehensive resource on digital transformation strategy and implementation across industries."
-        }
-      ]
-    },
-    {
-      topic: "Career Development in Tech",
-      context: "Advice for professionals navigating careers in rapidly evolving technology sectors",
-      links: [
-        {
-          url: "https://www.forbes.com/sites/forbestechcouncil/2023/05/15/how-to-future-proof-your-career-in-tech/",
-          title: "Future-Proofing Your Tech Career",
-          description: "Expert advice from Forbes on building adaptable skills and navigating technological disruption in your career."
+          url: "https://www.mckinsey.com/industries/healthcare/our-insights/the-future-of-healthcare-digital-transformation",
+          title: "The Future of Healthcare: Digital Transformation",
+          description: "McKinsey's insights on how digital transformation is reshaping healthcare delivery and patient engagement."
         }
       ]
     },
@@ -110,6 +52,61 @@ const generateMockLinks = (topics: string[]): ProcessedTopic[] => {
           url: "https://hbr.org/topic/artificial-intelligence",
           title: "HBR on Artificial Intelligence",
           description: "Harvard Business Review's collection of articles, research and case studies on AI implementation in business."
+        }
+      ]
+    },
+    {
+      topic: "McKinsey Research on AI",
+      context: "Cited for insights on AI adoption across industries",
+      links: [
+        {
+          url: "https://www.mckinsey.com/capabilities/quantumblack/our-insights/global-survey-the-state-of-ai-in-2023",
+          title: "The State of AI in 2023",
+          description: "McKinsey's comprehensive global survey on AI adoption, implementation challenges, and business impact."
+        }
+      ]
+    },
+    {
+      topic: "AI Ethics",
+      context: "Discussion about responsible AI development and governance frameworks",
+      links: [
+        {
+          url: "https://www.nature.com/articles/s41586-023-06506-6",
+          title: "Building human-centered AI systems",
+          description: "Nature's analysis of developing AI systems that align with human values and ethical principles."
+        }
+      ]
+    },
+    {
+      topic: "Future of Work",
+      context: "How AI and automation are reshaping career paths and workplaces",
+      links: [
+        {
+          url: "https://www.mckinsey.com/featured-insights/future-of-work",
+          title: "Future of Work - McKinsey Insights",
+          description: "McKinsey's research on how technology is transforming work, workforce needs, and workplace environments."
+        }
+      ]
+    },
+    {
+      topic: "AI in Drug Discovery",
+      context: "Exploration of AI's role in accelerating pharmaceutical development",
+      links: [
+        {
+          url: "https://www.nature.com/articles/s41573-019-0024-x",
+          title: "Artificial intelligence in drug discovery",
+          description: "Nature Reviews Drug Discovery's comprehensive overview of AI applications in pharmaceutical research."
+        }
+      ]
+    },
+    {
+      topic: "Consumer-Centric Healthcare",
+      context: "The shift toward patient-centered care models and experiences",
+      links: [
+        {
+          url: "https://www.ncbi.nlm.nih.gov/pmc/articles/PMC6685149/",
+          title: "Patient-Centered Care: What It Means and How to Get There",
+          description: "Research examining the implementation and impact of consumer-centric healthcare delivery models."
         }
       ]
     }

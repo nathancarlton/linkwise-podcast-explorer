@@ -50,18 +50,18 @@ const LinksList: React.FC<LinksListProps> = ({ links, onLinkToggle, usedMockData
           <Alert className="mb-4" variant="warning">
             <AlertCircle className="h-4 w-4" />
             <AlertDescription>
-              Currently showing example links. For more accurate and relevant links based on your transcript, 
-              please add a valid OpenAI API key using the "Set OpenAI API Key" button above.
+              Currently showing example links because an OpenAI API key is either missing, invalid, or has insufficient permissions. 
+              Please add a valid OpenAI API key with access to GPT models using the "Set OpenAI API Key" button above.
             </AlertDescription>
           </Alert>
         )}
         
         <div className="flex items-center gap-2 mb-3 text-sm text-muted-foreground">
           <Info className="h-4 w-4" />
-          <span>Use checkboxes to select which links appear in the summary below. Unchecked links will be excluded.</span>
+          <span>Select which links appear in the summary by using the checkboxes below. Unchecked links will not appear in the summary.</span>
         </div>
         
-        <ScrollArea className="h-[400px] pr-4 overflow-y-auto [&>div]:!overflow-y-visible [&_[data-radix-scroll-area-thumb]]:w-2 [&_[data-radix-scroll-area-thumb]]:bg-muted-foreground/50">
+        <ScrollArea className="h-[400px] pr-4 overflow-y-auto [&>div]:!overflow-y-visible [&_[data-radix-scroll-area-thumb]]:w-2.5 [&_[data-radix-scroll-area-thumb]]:bg-muted-foreground/70 [&_[data-radix-scroll-area-thumb]]:hover:bg-muted-foreground [&_[data-radix-scroll-area-thumb]]:rounded-full">
           <div className="space-y-4">
             {Object.entries(groupedLinks).map(([topic, topicLinks], topicIndex) => (
               <div key={topic} className="link-enter" style={{ animationDelay: `${topicIndex * 100}ms` }}>
