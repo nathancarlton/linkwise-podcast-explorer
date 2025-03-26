@@ -8,8 +8,7 @@ import ApiKeyInput from '@/components/ApiKeyInput';
 import { Separator } from '@/components/ui/separator';
 import { 
   processTranscript, 
-  findLinksForTopics, 
-  parseUserProvidedLinks 
+  findLinksForTopics
 } from '@/utils/transcriptProcessor';
 import { LinkItem, ProcessingStage, ProcessedTopic } from '@/types';
 import { toast } from 'sonner';
@@ -69,35 +68,6 @@ const Index = () => {
     }
   };
 
-  const handleProcessLinks = (linksText: string) => {
-    try {
-      setProcessingStage(ProcessingStage.FindingLinks);
-      setLinks([]);
-      setUsedMockData(false);
-      
-      // Parse user-provided links
-      const processedTopics = parseUserProvidedLinks(linksText);
-      
-      if (processedTopics.length === 0) {
-        toast.error('No valid links found in the provided text');
-        setProcessingStage(ProcessingStage.Initial);
-        return;
-      }
-      
-      // Convert processed topics to link items
-      const linkItems = processTopicsToLinkItems(processedTopics);
-      
-      setLinks(linkItems);
-      setProcessingStage(ProcessingStage.Complete);
-      
-      toast.success(`Processed ${linkItems.length} links across ${processedTopics.length} topics`);
-    } catch (error) {
-      console.error('Error processing links:', error);
-      toast.error('An error occurred while processing the links');
-      setProcessingStage(ProcessingStage.Initial);
-    }
-  };
-
   // Helper function to convert processed topics to link items
   const processTopicsToLinkItems = (processedTopics: ProcessedTopic[]): LinkItem[] => {
     const linkItems: LinkItem[] = [];
@@ -148,7 +118,6 @@ const Index = () => {
         
         <TranscriptInput 
           onProcess={handleProcessTranscript}
-          onProcessLinks={handleProcessLinks}
           processingStage={processingStage}
         />
         

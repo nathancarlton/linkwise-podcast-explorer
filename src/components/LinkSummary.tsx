@@ -11,13 +11,29 @@ interface LinkSummaryProps {
 }
 
 const LinkSummary: React.FC<LinkSummaryProps> = ({ links }) => {
-  const [activeTab, setActiveTab] = useState('text');
+  const [activeTab, setActiveTab] = useState('markdown');
   
   const checkedLinks = links.filter(link => link.checked);
   
   if (checkedLinks.length === 0) {
     return null;
   }
+
+  const generateMarkdownSummary = () => {
+    const lines = [
+      '# Links mentioned in this episode',
+      '',
+    ];
+    
+    checkedLinks.forEach(link => {
+      lines.push(`## ${link.topic}`);
+      lines.push(`[${link.title}](${link.url})`);
+      lines.push(`${link.description}`);
+      lines.push('');
+    });
+    
+    return lines.join('\n');
+  };
 
   const generateTextSummary = () => {
     const lines = [
@@ -52,6 +68,7 @@ const LinkSummary: React.FC<LinkSummaryProps> = ({ links }) => {
     return lines.join('\n');
   };
   
+  const markdownSummary = generateMarkdownSummary();
   const textSummary = generateTextSummary();
   const htmlSummary = generateHtmlSummary();
   
@@ -71,10 +88,23 @@ const LinkSummary: React.FC<LinkSummaryProps> = ({ links }) => {
       </CardHeader>
       <CardContent>
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid grid-cols-2 mb-4">
+          <TabsList className="grid grid-cols-3 mb-4">
+            <TabsTrigger value="markdown">Markdown</TabsTrigger>
             <TabsTrigger value="text">Plain Text</TabsTrigger>
             <TabsTrigger value="html">HTML</TabsTrigger>
           </TabsList>
+          
+          <TabsContent value="markdown" className="space-y-4">
+            <div className="p-4 bg-secondary/40 rounded-lg font-mono text-sm overflow-x-auto whitespace-pre-wrap">
+              {markdownSummary}
+            </div>
+            <Button 
+              onClick={() => copyToClipboard(markdownSummary, 'Markdown summary')}
+              className="w-full transition-all hover:bg-primary/90"
+            >
+              Copy Markdown Summary
+            </Button>
+          </TabsContent>
           
           <TabsContent value="text" className="space-y-4">
             <div className="p-4 bg-secondary/40 rounded-lg font-mono text-sm overflow-x-auto whitespace-pre-wrap">

@@ -7,6 +7,7 @@ import { Separator } from '@/components/ui/separator';
 import { LinkItem } from '@/types';
 import { ExternalLink, AlertCircle } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface LinksListProps {
   links: LinkItem[];
@@ -15,6 +16,8 @@ interface LinksListProps {
 }
 
 const LinksList: React.FC<LinksListProps> = ({ links, onLinkToggle, usedMockData }) => {
+  const isMobile = useIsMobile();
+  
   if (links.length === 0) {
     return null;
   }
@@ -66,7 +69,7 @@ const LinksList: React.FC<LinksListProps> = ({ links, onLinkToggle, usedMockData
                         onCheckedChange={(checked) => onLinkToggle(link.id, !!checked)} 
                         className="mt-1"
                       />
-                      <div className="flex-1">
+                      <div className="flex-1 min-w-0"> {/* Added min-w-0 to allow content to shrink */}
                         <label 
                           htmlFor={link.id} 
                           className="font-medium cursor-pointer hover:text-primary transition-colors"
@@ -80,10 +83,10 @@ const LinksList: React.FC<LinksListProps> = ({ links, onLinkToggle, usedMockData
                             rel="noopener noreferrer" 
                             className="flex items-center text-blue-500 hover:text-blue-700 underline group w-fit"
                           >
-                            <span className="truncate max-w-[300px]">{link.url}</span>
-                            <ExternalLink className="ml-1 h-3 w-3 opacity-70 group-hover:opacity-100 transition-opacity" />
+                            <span className={`truncate ${isMobile ? 'max-w-[200px]' : 'max-w-[300px]'}`}>{link.url}</span>
+                            <ExternalLink className="ml-1 h-3 w-3 opacity-70 group-hover:opacity-100 transition-opacity flex-shrink-0" />
                           </a>
-                          <p className="text-sm text-muted-foreground mt-1">
+                          <p className="text-sm text-muted-foreground mt-1 break-words">
                             {link.description}
                           </p>
                         </div>
