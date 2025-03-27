@@ -14,7 +14,9 @@ export const buildSystemPrompt = (domainsToAvoid: string[] = []): string => {
     ? `Avoid linking to these domains: ${domainsToAvoid.join(', ')}.` 
     : '';
 
-  return `Find high-quality links for the given topics. ${domainsToAvoidStr}`;
+  return `Find high-quality links for the given topics. For each topic, provide at least 2-3 different links from varied sources. 
+  Each link should be directly relevant to its specific topic.
+  ${domainsToAvoidStr}`;
 };
 
 /**
@@ -30,7 +32,8 @@ export const buildUserPrompt = (
 ): string => {
   const topicsJson = JSON.stringify(topicsFormatted);
   
-  return `Find links for: ${topicsJson}. ${domainsToAvoid.length > 0 ? `Avoid these domains: ${domainsToAvoid.join(', ')}.` : ''}`;
+  return `Find links for: ${topicsJson}. For each topic, find at least 2-3 different links from varied sources. 
+  ${domainsToAvoid.length > 0 ? `Avoid these domains: ${domainsToAvoid.join(', ')}.` : ''}`;
 };
 
 /**

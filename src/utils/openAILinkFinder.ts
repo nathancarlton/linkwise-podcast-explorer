@@ -60,6 +60,9 @@ export const findLinksWithOpenAI = async (
       });
     });
     
+    // Used to track already used URLs to prevent duplicates
+    const usedUrls = new Map<string, string>(); // url -> topic it was used for
+    
     // Find message output in the response
     let messageContent = null;
     
@@ -96,8 +99,8 @@ export const findLinksWithOpenAI = async (
       let inSection = false;
       let sectionStart = 0;
       
-      // Look for topic headers in the text
-      const topicRegex = /\*\*(.*?):\*\*|\*\*\d+\.\s*(.*?)\*\*|^\d+\.\s*(.*?)$/m;
+      // Look for topic headers in the text using various patterns
+      const topicRegex = /\*\*(.*?):\*\*|\*\*\d+\.\s*(.*?)\*\*|^\d+\.\s*(.*?):|^\*\*(.*?)\*\*:/m;
       
       for (let i = 0; i < lines.length; i++) {
         const line = lines[i];
@@ -113,7 +116,7 @@ export const findLinksWithOpenAI = async (
           }
           
           // Extract topic name (could be in different capture groups)
-          currentTopic = (match[1] || match[2] || match[3]).trim();
+          currentTopic = (match[1] || match[2] || match[3] || match[4]).trim();
           sectionStart = fullText.indexOf(line);
           inSection = true;
           
@@ -158,6 +161,12 @@ export const findLinksWithOpenAI = async (
         if (annotation.type === 'url_citation' && annotation.url) {
           // Extract annotation information
           const url = annotation.url;
+          
+          // Skip duplicate URLs 
+          if (usedUrls.has(url)) {
+            continue;
+          }
+          
           const title = annotation.title || extractTitleFromUrl(url);
           
           // Find which topic this annotation belongs to
@@ -209,6 +218,9 @@ export const findLinksWithOpenAI = async (
           
           // Add link to the found topic
           if (foundTopic) {
+            // Mark this URL as used for this topic
+            usedUrls.set(url, foundTopic.topic);
+            
             foundTopic.links.push({
               url,
               title,
@@ -222,6 +234,13 @@ export const findLinksWithOpenAI = async (
       for (const topicData of topicMap.values()) {
         if (topicData.links.length > 0) {
           processedTopics.push(topicData);
+        } else {
+          // Add topics with no links to maintain topic count
+          processedTopics.push({
+            topic: topicData.topic,
+            context: topicData.context,
+            links: []
+          });
         }
       }
     }
@@ -235,6 +254,11 @@ export const findLinksWithOpenAI = async (
       if (foundUrls.length > 0) {
         // Try to assign URLs to topics based on proximity
         for (const url of foundUrls) {
+          // Skip if this URL has already been used
+          if (usedUrls.has(url)) {
+            continue;
+          }
+          
           const urlIndex = fullText.indexOf(url);
           let closestTopic = '';
           let minDistance = Number.MAX_SAFE_INTEGER;
@@ -260,6 +284,9 @@ export const findLinksWithOpenAI = async (
             );
             
             if (topicData) {
+              // Mark this URL as used
+              usedUrls.set(url, topicData.topic);
+              
               topicData.links.push({
                 url,
                 title: extractTitleFromUrl(url),
@@ -275,6 +302,20 @@ export const findLinksWithOpenAI = async (
         }
       }
     }
+    
+    // For topics with no links found, return them anyway with an empty links array
+    topicsFormatted.forEach(topic => {
+      const topicName = topic.topic.replace(/,$/, '').trim();
+      const existingTopic = processedTopics.find(pt => pt.topic.toLowerCase() === topicName.toLowerCase());
+      
+      if (!existingTopic) {
+        processedTopics.push({
+          topic: topicName,
+          context: topic.context || '',
+          links: []
+        });
+      }
+    });
     
     console.log('Extracted links:', processedTopics);
     return { processedTopics, usedMockData: false };
