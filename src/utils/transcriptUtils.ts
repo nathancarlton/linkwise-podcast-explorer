@@ -56,8 +56,9 @@ Guidelines:
 - Be extremely specific - e.g., "The impact of quantum computing on cryptography" instead of just "Quantum computing"
 - Each topic should be 2-5 words, concise yet descriptive
 - Focus on the core concepts, techniques, books, products, organizations or people discussed in depth
-- For books mentioned, extract the SPECIFIC titles with their authors, not general categories like "Books on Creativity" 
-- For example, use "Range by David Epstein" instead of "Books on Generalist Skills"
+- For any books mentioned, you MUST extract the SPECIFIC BOOK TITLE WITH AUTHOR NAME as the topic
+  - Example: use "Range by David Epstein" instead of "Books on Generalist Skills"
+  - Example: use "Competing in the Age of AI by Karim Lakhani" instead of "Books about AI Strategy"
 - For techniques or methods discussed, be specific about what approach or methodology was mentioned
 - Prioritize unique topics that aren't commonly found in every podcast on this subject
 - Do not include generic topics that could apply to any podcast
