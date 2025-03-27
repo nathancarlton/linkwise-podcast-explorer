@@ -107,28 +107,35 @@ export const makeFollowUpRequest = async (
     content: searchResults[index] || 'No results found'
   }));
   
-  // Send follow-up request with search results
+  console.log('Sending follow-up request to OpenAI with search results');
+  
+  // Create the input array for the follow-up request
+  const inputMessages = [
+    {
+      role: 'system',
+      content: buildSystemPrompt(domainsToAvoid)
+    },
+    {
+      role: 'user',
+      content: prompt
+    },
+    message,
+    ...followUpMessages,
+    {
+      role: 'user',
+      content: buildFollowUpMessage(domainsToAvoid)
+    }
+  ];
+  
+  console.log('Follow-up input messages:', JSON.stringify(inputMessages));
+  
+  // Send follow-up request with search results using the Chat Completions API
   const followUpResponse = await fetch('https://api.openai.com/v1/chat/completions', {
     method: 'POST',
     headers: getOpenAIHeaders(apiKey),
     body: JSON.stringify({
       model: 'gpt-4o-mini',
-      messages: [
-        {
-          role: 'system',
-          content: buildSystemPrompt(domainsToAvoid)
-        },
-        {
-          role: 'user',
-          content: prompt
-        },
-        message,
-        ...followUpMessages,
-        {
-          role: 'user',
-          content: buildFollowUpMessage(domainsToAvoid)
-        }
-      ],
+      messages: inputMessages,
       response_format: {
         type: "json_object"
       }
