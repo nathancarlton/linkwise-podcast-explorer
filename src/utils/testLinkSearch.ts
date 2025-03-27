@@ -1,5 +1,6 @@
 
-import { findLinksForTopics, processTranscript } from './transcriptAPI';
+import { findLinksForTopics } from './linkFinder';
+import { processTranscript } from './transcriptProcessor';
 import { v4 as uuidv4 } from 'uuid';
 import { LinkItem, ProcessedTopic } from '../types';
 
