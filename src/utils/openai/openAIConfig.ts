@@ -14,17 +14,9 @@ export const buildSystemPrompt = (domainsToAvoid: string[] = []): string => {
     ? `Avoid linking to these domains: ${domainsToAvoid.join(', ')}.` 
     : '';
 
-  return `You are an assistant that finds high-quality, specific links for topics mentioned in podcasts.
-
-Your task is to search for reliable, authoritative sources related to each topic and provide:
-1. Only links that currently exist and are accessible
-2. Content from established publications and trustworthy sources
-3. Specific pages that directly address the topic (not just homepages)
-
-For books, find official publisher or author pages.
+  return `Search the web to find high-quality links for each topic. Provide 2-3 specific links with full URL, title, and a brief description for each.
 ${domainsToAvoidStr}
-
-Use the search_web function to find information, then format your final response as a JSON object.`;
+Focus on authoritative sources that directly address the topic.`;
 };
 
 /**
@@ -42,18 +34,9 @@ export const buildUserPrompt = (
     ? `Avoid linking to these domains: ${domainsToAvoid.join(', ')}.` 
     : '';
 
-  return `Find specific, high-quality links for these podcast topics: ${JSON.stringify(topicsFormatted)}. 
-    
-For each topic, provide 2-3 links to SPECIFIC SOURCES that address the exact context of the topic.
-Focus on established publications and authoritative organizations.
-
-For any books mentioned, find their publisher pages or author websites.
+  return `Find 2-3 high-quality links for each of these topics: ${JSON.stringify(topicsFormatted)}. 
 ${domainsToAvoidStr}
-
-For each link, include:
-- The full URL (must be real and working)
-- A clear title
-- A brief description explaining the relevance to the topic`;
+For each link, include the full URL, a clear title, and a brief description explaining its relevance.`;
 };
 
 /**
@@ -63,9 +46,7 @@ For each link, include:
  * @returns Follow-up message string
  */
 export const buildFollowUpMessage = (domainsToAvoid: string[] = []): string => {
-  return `Based on the search results, please provide me with 2-3 highly relevant links for each topic in the JSON format requested. Remember to avoid using links from: ${domainsToAvoid.join(', ')}.
-
-MOST IMPORTANT: Only include links that are likely to be valid and accessible. Focus on established websites and publications.`;
+  return `Based on your search results, provide 2-3 high-quality links for each topic in JSON format. ${domainsToAvoid.length > 0 ? `Avoid links from: ${domainsToAvoid.join(', ')}.` : ''}`;
 };
 
 /**

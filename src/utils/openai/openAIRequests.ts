@@ -24,8 +24,7 @@ export const makeInitialRequest = async (
   console.log('System prompt:', systemPrompt);
   console.log('User prompt:', prompt);
   
-  // Use the responses API endpoint specifically designed for web search
-  // Note: We're removing the JSON format requirement since it's incompatible with web search
+  // Use the Responses API with a simplified configuration for web search
   const response = await fetch('https://api.openai.com/v1/responses', {
     method: 'POST',
     headers: getOpenAIHeaders(apiKey),
@@ -36,16 +35,8 @@ export const makeInitialRequest = async (
           type: "web_search"
         }
       ],
-      input: [
-        {
-          role: "system",
-          content: systemPrompt
-        },
-        {
-          role: "user",
-          content: prompt
-        }
-      ]
+      input: prompt,
+      instructions: systemPrompt
     })
   });
 
