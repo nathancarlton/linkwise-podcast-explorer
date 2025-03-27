@@ -107,10 +107,7 @@ export const isValidUrl = (url: string): boolean => {
     // Check for common patterns in fake or placeholder URLs
     const invalidPatterns = [
       'example.com', 'test.com', 'domain.com', 'mysite.com',
-      'localhost', 'website.com', 'placeholder', '127.0.0.1',
-      'appliedai.mn', 'business/think', 'business/right', 'topic/really',
-      'business/going', 'industries/because', 'category/about', 
-      'category/caroline', 'category/justin'
+      'localhost', 'website.com', 'placeholder', '127.0.0.1'
     ];
     
     // Reject if hostname contains invalid patterns
