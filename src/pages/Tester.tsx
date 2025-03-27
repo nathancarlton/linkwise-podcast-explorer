@@ -11,7 +11,7 @@ const Tester = () => {
 
   // Load API key from localStorage on component mount
   useEffect(() => {
-    const storedApiKey = localStorage.getItem('openai-api-key');
+    const storedApiKey = localStorage.getItem('openai_api_key');
     if (storedApiKey) {
       setApiKey(storedApiKey);
     }
