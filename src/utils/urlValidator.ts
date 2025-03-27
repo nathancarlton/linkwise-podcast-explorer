@@ -35,9 +35,7 @@ export const isValidUrl = (url: string): boolean => {
       'acm.org',
       'ieee.org',
       'arxiv.org',
-      'nih.gov',
       'pubmed.gov',
-      'ncbi.nlm.nih.gov',
       'sciencedirect.com',
       'springer.com',
       'amazon.com',
@@ -58,6 +56,30 @@ export const isValidUrl = (url: string): boolean => {
       'edx.org',
       'udacity.com',
       'udemy.com',
+      
+      // Add more reliable domains for healthcare, business, and AI content
+      'mayoclinic.org',
+      'healthline.com',
+      'webmd.com',
+      'who.int',
+      'cdc.gov',
+      'nih.gov',
+      'cancer.gov',
+      'healthcare.gov',
+      'medlineplus.gov',
+      'health.harvard.edu',
+      'jamanetwork.com',
+      'nejm.org',
+      'bmj.com',
+      'thelancet.com',
+      'hbswk.hbs.edu', // Harvard Business School Working Knowledge
+      'gsb.stanford.edu',
+      'sloanreview.mit.edu',
+      'strategy-business.com',
+      'fastcompany.com',
+      'wired.com',
+      'arstechnica.com',
+      'zdnet.com'
     ];
     
     // Check if the domain or a subdomain of a known domain

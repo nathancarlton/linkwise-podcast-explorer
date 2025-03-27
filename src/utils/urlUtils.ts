@@ -12,75 +12,75 @@ export const validateUrl = async (url: string): Promise<boolean> => {
       return false;
     }
     
-    // Known high-quality domains we can trust without checking
+    // Known high-quality domains we can trust without deep checking
     const trustedDomains = [
-      'github.com', 'wikipedia.org', 'nature.com', 'nih.gov', 
-      'pubmed.gov', 'ncbi.nlm.nih.gov', 'sciencedirect.com', 
-      'springer.com', 'ieee.org', 'acm.org', 'arxiv.org',
-      'harvard.edu', 'mit.edu', 'stanford.edu', 'edx.org',
-      'coursera.org', 'udacity.com', 'mckinsey.com', 'hbr.org',
-      'techcrunch.com', 'forbes.com', 'wsj.com', 'nytimes.com',
-      'cnn.com', 'bbc.com', 'reuters.com', 'bloomberg.com',
-      'apple.com', 'microsoft.com', 'google.com', 'ibm.com',
-      'amazon.com', 'netflix.com', 'youtube.com', 'facebook.com',
-      'twitter.com', 'linkedin.com', 'instagram.com', 'reddit.com',
-      'medium.com', 'dev.to', 'healthit.gov', 'who.int', 'cdc.gov',
-      'mayoclinic.org', 'webmd.com', 'hopkinsmedicine.org', 'clevelandclinic.org',
-      'healthcare.gov', 'cancer.gov', 'cancer.org', 'heart.org',
-      'diabetes.org', 'alz.org', 'medlineplus.gov', 'jamanetwork.com',
-      'nejm.org', 'bmj.com', 'thelancet.com', 'cell.com', 'academic.oup.com',
-      'frontiersin.org', 'pnas.org', 'plos.org'
+      'github.com', 'arxiv.org', 'nature.com', 'jamanetwork.com', 
+      'nejm.org', 'sciencedirect.com', 'pubmed.gov', 'healthline.com',
+      'mayoclinic.org', 'webmd.com', 'who.int', 'cdc.gov', 'medlineplus.gov',
+      'hbswk.hbs.edu', 'gsb.stanford.edu', 'sloanreview.mit.edu', 'strategy-business.com',
+      'nih.gov', 'cancer.gov', 'healthcare.gov', 'health.harvard.edu'
     ];
     
+    // Extract domain from URL
+    const urlObj = new URL(url);
+    const domain = urlObj.hostname.replace('www.', '');
+    
+    // For non-HTTPS URLs, reject by default for security unless explicitly trusted
+    if (!url.startsWith('https://') && !trustedDomains.includes(domain)) {
+      console.warn(`Non-HTTPS URL rejected: ${url}`);
+      return false;
+    }
+    
+    // For trusted domains, assume valid without heavy checking
+    if (trustedDomains.some(trusted => domain === trusted || domain.endsWith('.' + trusted))) {
+      console.log(`Trusted domain validated without deep checking: ${domain}`);
+      return true;
+    }
+    
     try {
-      const urlObj = new URL(url);
-      const domain = urlObj.hostname;
+      // First try a rapid HEAD request with a short timeout
+      const response = await axios.head(url, { 
+        timeout: 3000,
+        validateStatus: status => status < 500 // Accept anything that's not a server error
+      });
       
-      // For non-trusted domains, we'll be more cautious by default
-      if (!url.startsWith('https://')) {
-        console.warn(`Non-HTTPS URL rejected: ${url}`);
-        return false;
+      // For 2xx responses, treat as likely valid
+      if (response.status >= 200 && response.status < 300) {
+        console.log(`URL ${url} validated with status ${response.status}`);
+        return true;
       }
       
-      // First try to resolve the URL directly with a basic check
-      try {
-        // Attempt a rapid HEAD request first with a short timeout
-        const response = await axios.head(url, { 
-          timeout: 3000,
-          validateStatus: status => status < 500 // Accept anything that's not a server error
-        });
-        
-        // If we get a 200-299 response, the URL likely exists but we'll do deeper validation
-        if (response.status >= 200 && response.status < 300) {
-          // Still do a GET request to check content quality for all domains
-          return await validateUrlContent(url, domain, trustedDomains);
-        }
-        
-        // For 3xx, 4xx responses, we'll do a deeper check with our edge function
-      } catch (error) {
-        // If the HEAD request fails, we'll try the edge function
-        console.log(`Direct HEAD request failed for ${url}, trying edge function validation`);
-      }
-      
-      // Always force check and bypass cache during validation for better results
+      // For 3xx, 4xx responses, use edge function for deeper validation
+      console.log(`HEAD request returned status ${response.status} for ${url}, trying edge function`);
+    } catch (error) {
+      // If direct request fails, use the edge function
+      console.log(`Direct HEAD request failed for ${url}, trying edge function validation`);
+    }
+    
+    // Use Supabase edge function for deeper validation
+    try {
       const { data, error } = await supabase.functions.invoke('validate-url', {
         body: { 
           url, 
-          deepValidation: true, 
-          forceCheck: true 
+          deepValidation: false, // Keep validation lightweight to improve performance
+          forceCheck: false     // Use cached results when available
         }
       });
       
       if (error) {
         console.warn(`Edge function error validating URL: ${url}`, error);
-        return false;
+        
+        // Fallback: be more lenient when validation service fails
+        // This helps prevent empty results if the validation service is having issues
+        return true; // Consider valid if validator fails (fallback)
       }
       
-      // Only return true if the URL was actually validated as containing quality content
       return data.isValid;
-    } catch (e) {
-      console.warn(`URL parsing failed: ${url}`, e);
-      return false;
+    } catch (edgeError) {
+      console.warn(`Edge function request failed for ${url}`, edgeError);
+      
+      // If the edge function fails completely, be lenient to avoid empty results
+      return true; // Consider valid if validator service is unreachable (fallback)
     }
   } catch (error) {
     console.warn(`URL validation failed for ${url}:`, error?.message || error);
@@ -88,15 +88,17 @@ export const validateUrl = async (url: string): Promise<boolean> => {
   }
 };
 
-// Helper function to validate URL content quality
+// Helper function to validate URL content quality - simplified version
 const validateUrlContent = async (url: string, domain: string, trustedDomains: string[]): Promise<boolean> => {
   try {
-    // Check if the URL is from a trusted domain - we'll still validate but be less strict
-    const isTrustedDomain = trustedDomains.some(trusted => 
+    // For trusted domains, skip deep content checks
+    if (trustedDomains.some(trusted => 
       domain === trusted || domain.endsWith('.' + trusted)
-    );
+    )) {
+      return true;
+    }
     
-    // Attempt a GET request to check actual content
+    // For other domains, do a basic check
     const response = await axios.get(url, {
       timeout: 5000,
       maxRedirects: 3,
@@ -105,79 +107,20 @@ const validateUrlContent = async (url: string, domain: string, trustedDomains: s
       }
     });
     
-    const html = response.data;
-    
-    // Check for common error page indicators in the content
-    const errorPatterns = [
-      'page not found', 'cannot be found', 'does not exist', 
-      'no longer available', 'error 404', '404 error',
-      'page unavailable', 'sorry, we couldn\'t find',
-      'page has moved', 'deleted', 'been removed',
-      'missing', 'invalid url', 'broken link',
-      'went wrong', 'oops', 'something went wrong',
-      'page doesn\'t exist', 'access denied'
-    ];
-    
-    const lowerHtml = typeof html === 'string' ? html.toLowerCase() : '';
-    
-    // Check for error indicators in the HTML content
-    const containsErrorPattern = errorPatterns.some(pattern => 
-      lowerHtml.includes(pattern)
-    );
-    
-    // Check if title contains error indicators
-    const titleMatch = typeof html === 'string' ? html.match(/<title[^>]*>(.*?)<\/title>/i) : null;
-    const title = titleMatch && titleMatch[1] ? titleMatch[1].toLowerCase() : '';
-    const titleContainsError = title.includes('not found') || 
-                               title.includes('error') || 
-                               title.includes('404') ||
-                               title.includes('unavailable');
-    
-    if (containsErrorPattern || titleContainsError) {
-      console.warn(`Error content detected for ${url}`);
-      return false;
-    }
-
-    // For specific domains with known issues, do more specialized checking
-    if (domain.includes('forbes.com')) {
-      // Forbes specific check - look for article content
-      if (!lowerHtml.includes('article-body') || lowerHtml.includes('page not found')) {
-        console.warn(`Forbes article validation failed for ${url}`);
-        return false;
-      }
-    }
-    
-    if (domain.includes('hbr.org')) {
-      // HBR specific check - look for article content
-      if (!lowerHtml.includes('article-body') || 
-          lowerHtml.includes('sign in to continue reading') ||
-          lowerHtml.includes('access to this page has been denied')) {
-        console.warn(`HBR article validation failed for ${url}`);
-        return false;
-      }
-    }
-    
-    if (domain.includes('mckinsey.com')) {
-      // McKinsey specific check
-      if (lowerHtml.includes('page you are looking for is unavailable') || 
-          lowerHtml.includes('page you requested cannot be found')) {
-        console.warn(`McKinsey article validation failed for ${url}`);
-        return false;
-      }
-    }
-    
-    if (domain.includes('nature.com')) {
-      // Nature specific check
-      if (lowerHtml.includes('page not found') || 
-          lowerHtml.includes('content unavailable')) {
-        console.warn(`Nature article validation failed for ${url}`);
+    // Simple check for common error patterns
+    if (typeof response.data === 'string') {
+      const lowerHtml = response.data.toLowerCase();
+      if (lowerHtml.includes('not found') || 
+          lowerHtml.includes('error 404') || 
+          lowerHtml.includes('page unavailable')) {
         return false;
       }
     }
     
     return true;
   } catch (error) {
+    // On errors, be lenient to avoid empty results
     console.warn(`Content validation error for ${url}:`, error?.message || error);
-    return false;
+    return true; // Consider valid if content check fails (fallback)
   }
 };

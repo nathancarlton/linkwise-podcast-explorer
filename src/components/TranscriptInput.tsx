@@ -1,13 +1,15 @@
+
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { ProcessingStage } from '@/types';
-import { Loader2, X, Plus } from 'lucide-react';
+import { Loader2, X, Plus, AlertTriangle } from 'lucide-react';
 import DomainAvoidList from './DomainAvoidList';
 import TopicAvoidList from './TopicAvoidList';
 import { Slider } from '@/components/ui/slider';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
 interface TranscriptInputProps {
   onProcess: (transcript: string, topicCount: number, domainsToAvoid: string[], topicsToAvoid: string[]) => void;
@@ -82,6 +84,8 @@ const TranscriptInput: React.FC<TranscriptInputProps> = ({
     processingStage === ProcessingStage.ProcessingTranscript || 
     processingStage === ProcessingStage.FindingLinks;
 
+  const showApiKeyNeededAlert = processingStage === ProcessingStage.Initial && transcript.trim().length > 0;
+
   return (
     <Card className="w-full animate-fade-in">
       <CardHeader>
@@ -93,6 +97,15 @@ const TranscriptInput: React.FC<TranscriptInputProps> = ({
         </CardTitle>
       </CardHeader>
       <CardContent>
+        {showApiKeyNeededAlert && (
+          <Alert variant="warning" className="mb-4">
+            <AlertTriangle className="h-4 w-4" />
+            <AlertDescription>
+              You will need to enter an OpenAI API key in the settings above to process transcripts and find links.
+            </AlertDescription>
+          </Alert>
+        )}
+
         <Textarea
           placeholder="Paste your podcast transcript here (including timestamps and speaker names)..."
           className="min-h-[300px] resize-y transition-all focus:shadow-md"
