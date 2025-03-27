@@ -11,7 +11,7 @@ import { Slider } from '@/components/ui/slider';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 
 interface TranscriptInputProps {
-  onProcess: (transcript: string, topicCount: number, domainsToAvoid: string[], topicsToAvoid: string[]) => void;
+  onProcess: (transcript: string, topicCount: number, domainsToAvoid: string[]) => void;
   processingStage: ProcessingStage;
   hasApiKey?: boolean;
 }
