@@ -13,6 +13,8 @@ import {
 } from '@/utils/transcriptProcessor';
 import { LinkItem, ProcessingStage, ProcessedTopic, TopicItem } from '@/types';
 import { toast } from 'sonner';
+import { Link } from 'react-router-dom';
+import { Beaker } from 'lucide-react';
 
 const Index = () => {
   const [processingStage, setProcessingStage] = useState<ProcessingStage>(ProcessingStage.Initial);
@@ -209,6 +211,12 @@ const Index = () => {
           Extract meaningful topics and generate authoritative links from your podcast transcripts.
           Perfect for show notes and resource pages.
         </p>
+        <div className="mt-4">
+          <Link to="/tester" className="text-sm flex items-center justify-center gap-1 text-muted-foreground hover:text-foreground transition-colors">
+            <Beaker className="h-4 w-4" /> 
+            Advanced Testing Tools
+          </Link>
+        </div>
       </header>
       
       <main className="w-full max-w-4xl">
