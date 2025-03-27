@@ -17,6 +17,7 @@ export const makeInitialRequest = async (
   prompt: string,
   domainsToAvoid: string[] = []
 ): Promise<any> => {
+  console.log('Making request to OpenAI Responses API with correct parameters');
   // Use the responses API endpoint specifically designed for web search
   const response = await fetch('https://api.openai.com/v1/responses', {
     method: 'POST',
@@ -31,16 +32,10 @@ export const makeInitialRequest = async (
           type: "web_search"
         }
       ],
-      messages: [
-        {
-          role: 'system',
-          content: buildSystemPrompt(domainsToAvoid)
-        },
-        {
-          role: 'user',
-          content: prompt
-        }
-      ],
+      input: {
+        system: buildSystemPrompt(domainsToAvoid),
+        user: prompt
+      }
     })
   });
 

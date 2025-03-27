@@ -41,26 +41,27 @@ export const findLinksWithOpenAI = async (
     
     console.log('Received response from OpenAI:', data);
     
-    if (!data || !data.choices || !data.choices[0] || !data.choices[0].message) {
+    // Responses API has a different structure
+    if (!data || !data.choices || !data.choices[0]) {
       console.error('Invalid response format from OpenAI API:', data);
       return { processedTopics: [], usedMockData: false };
     }
     
-    // Process the search results
-    const message = data.choices[0].message;
-    console.log('OpenAI response message:', message);
+    // The response object in Responses API
+    const responseObject = data.choices[0];
+    console.log('OpenAI response object:', responseObject);
     
-    // The responses API handles web search differently than the chat completions API
-    // The relevant links should already be in the message content
+    // For the Responses API, the content should be directly in the response object
     try {
-      const content = message.content || "{}";
+      const content = responseObject.text || responseObject.message?.content || "{}";
       console.log('Processing content from response:', content);
       return await processAPIResponse(content, topicsFormatted, domainsToAvoid);
     } catch (error) {
       console.error('Error processing API response:', error);
       
-      // If there are tool_calls in the response, fallback to the old method
-      if (message.tool_calls && message.tool_calls.length > 0) {
+      // Fallback to handling tool_calls if present
+      const message = responseObject.message;
+      if (message && message.tool_calls && message.tool_calls.length > 0) {
         console.log('Falling back to tool_calls processing method');
         // Handle tool calls and follow-up with additional messages
         const followUpData = await makeFollowUpRequest(message, prompt, apiKey, domainsToAvoid);
