@@ -36,20 +36,10 @@ export const findLinksWithOpenAI = async (
       return t;
     });
     
-    // Use more reliable sources for links
     const prompt = `Find specific, high-quality links for these podcast topics: ${JSON.stringify(topicsFormatted)}. 
     
-For each topic, provide 2-3 links to SPECIFIC, RELIABLE SOURCES that address the exact context of the topic.
-Focus on established publications, educational institutions, and authoritative organizations.
-
-Recommended sources:
-- Harvard Business Review (hbr.org)
-- MIT Technology Review (technologyreview.com)
-- Nature.com
-- NIH.gov or similar government health sites
-- Educational institutions (.edu domains)
-- Major news publications (NYTimes, WSJ, BBC)
-- Professional organizations like IEEE or ACM
+For each topic, provide 2-3 links to SPECIFIC SOURCES that address the exact context of the topic.
+Focus on established publications and authoritative organizations.
 
 For any books mentioned, find their publisher pages or author websites.
 ${domainsToAvoidStr}
@@ -204,7 +194,7 @@ Format your response as a simple JSON with this exact structure:
               role: 'user',
               content: `Based on the search results, please provide me with 2-3 highly relevant links for each topic in the JSON format requested. Remember to avoid using links from: ${domainsToAvoid.join(', ')}.
 
-MOST IMPORTANT: Only include links that are likely to be valid and accessible. Focus on major, established websites and publications rather than speculative or hard-to-validate sources.`
+MOST IMPORTANT: Only include links that are likely to be valid and accessible. Focus on established websites and publications.`
             }
           ],
           response_format: { type: "json_object" }
