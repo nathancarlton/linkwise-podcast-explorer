@@ -32,6 +32,8 @@ export const findLinksWithOpenAI = async (
       return t;
     });
     
+    console.log('Formatted topics:', topicsFormatted);
+    
     // Build the user prompt for OpenAI
     const prompt = buildUserPrompt(topicsFormatted, domainsToAvoid);
     console.log('Sending request to OpenAI with web_search tool using responses API');

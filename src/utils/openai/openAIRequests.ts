@@ -18,6 +18,12 @@ export const makeInitialRequest = async (
   domainsToAvoid: string[] = []
 ): Promise<any> => {
   console.log('Making request to OpenAI Responses API with correct parameters');
+  
+  // Build the system prompt
+  const systemPrompt = buildSystemPrompt(domainsToAvoid);
+  console.log('System prompt:', systemPrompt);
+  console.log('User prompt:', prompt);
+  
   // Use the responses API endpoint specifically designed for web search
   const response = await fetch('https://api.openai.com/v1/responses', {
     method: 'POST',
@@ -32,10 +38,16 @@ export const makeInitialRequest = async (
           type: "web_search"
         }
       ],
-      input: {
-        system: buildSystemPrompt(domainsToAvoid),
-        user: prompt
-      }
+      input: [
+        {
+          role: "system",
+          content: systemPrompt
+        },
+        {
+          role: "user",
+          content: prompt
+        }
+      ]
     })
   });
 
@@ -104,24 +116,7 @@ export const makeFollowUpRequest = async (
       messages: [
         {
           role: 'system',
-          content: `You are an assistant that finds high-quality, specific, and authoritative links for topics mentioned in podcasts.
-          
-Format your response as a simple JSON with this exact structure:
-{
-  "topics": [
-    {
-      "topic": "The topic name",
-      "context": "The context of the topic",
-      "links": [
-        {
-          "url": "https://example.com/specific-page",
-          "title": "Title of the webpage",
-          "description": "Brief description of why this link is relevant"
-        }
-      ]
-    }
-  ]
-}`
+          content: buildSystemPrompt(domainsToAvoid)
         },
         {
           role: 'user',
@@ -134,8 +129,8 @@ Format your response as a simple JSON with this exact structure:
           content: buildFollowUpMessage(domainsToAvoid)
         }
       ],
-      text: {
-        format: { type: "json_object" }
+      response_format: {
+        type: "json_object"
       }
     })
   });
