@@ -54,20 +54,22 @@ Guidelines:
 - For each link, include the full URL, title, and a brief description
 ${domainsToAvoidStr}
 
-YOUR RESPONSE MUST BE A VALID JSON ARRAY structured as follows:
-[
-  {
-    "topic": "The topic name",
-    "context": "The topic context",
-    "links": [
-      {
-        "url": "https://example.com/specific-page",
-        "title": "The title of the page",
-        "description": "A brief description of why this link is relevant"
-      }
-    ]
-  }
-]`
+YOUR RESPONSE MUST BE A VALID JSON OBJECT with this structure:
+{
+  "topics": [
+    {
+      "topic": "The topic name",
+      "context": "The topic context",
+      "links": [
+        {
+          "url": "https://example.com/specific-page",
+          "title": "The title of the page",
+          "description": "A brief description of why this link is relevant"
+        }
+      ]
+    }
+  ]
+}`
           },
           {
             role: 'user',
@@ -84,6 +86,7 @@ Here are the topics: ${JSON.stringify(topics)}`
             type: "web_search"
           }
         ],
+        tool_choice: "auto",
         response_format: { type: "json_object" }
       })
     });

@@ -56,7 +56,7 @@ Guidelines:
 - Be extremely specific - e.g., "The impact of quantum computing on cryptography" instead of just "Quantum computing"
 - Each topic should be 2-5 words, concise yet descriptive
 - Focus on the core concepts, techniques, books, products, organizations or people discussed in depth
-- For any books mentioned, you MUST extract the SPECIFIC BOOK TITLE WITH AUTHOR NAME as the topic
+- For any books mentioned, ALWAYS extract them as "[Book Title] by [Author Name]"
   - Example: use "Range by David Epstein" instead of "Books on Generalist Skills"
   - Example: use "Competing in the Age of AI by Karim Lakhani" instead of "Books about AI Strategy"
 - For techniques or methods discussed, be specific about what approach or methodology was mentioned
@@ -74,7 +74,7 @@ The "topic" is the specific topic name, and "context" is a brief sentence explai
             role: 'user',
             content: `Extract the ${safeTopicCount} most important and specific topics from this podcast transcript, focusing on concepts, techniques, books, products, people or organizations discussed in detail. 
             
-Make sure to capture SPECIFIC BOOK TITLES with their authors when mentioned, not just general categories about books.
+ALWAYS capture SPECIFIC BOOK TITLES with their AUTHORS when mentioned, using the format "[Book Title] by [Author Name]" - not just general categories about books.
 
 ${topicsToAvoidStr}
 
