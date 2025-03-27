@@ -14,9 +14,7 @@ export const buildSystemPrompt = (domainsToAvoid: string[] = []): string => {
     ? `Avoid linking to these domains: ${domainsToAvoid.join(', ')}.` 
     : '';
 
-  return `Search the web to find high-quality links for each topic. Provide 2-3 specific links with full URL, title, and a brief description for each.
-${domainsToAvoidStr}
-Focus on authoritative sources that directly address the topic.`;
+  return `Find high-quality links for the given topics. ${domainsToAvoidStr}`;
 };
 
 /**
@@ -31,12 +29,10 @@ export const buildUserPrompt = (
   domainsToAvoid: string[] = []
 ): string => {
   const domainsToAvoidStr = domainsToAvoid.length > 0 
-    ? `Avoid linking to these domains: ${domainsToAvoid.join(', ')}.` 
+    ? `Avoid these domains: ${domainsToAvoid.join(', ')}.` 
     : '';
 
-  return `Find 2-3 high-quality links for each of these topics: ${JSON.stringify(topicsFormatted)}. 
-${domainsToAvoidStr}
-For each link, include the full URL, a clear title, and a brief description explaining its relevance.`;
+  return `Find links for: ${JSON.stringify(topicsFormatted)}. ${domainsToAvoidStr}`;
 };
 
 /**
@@ -46,7 +42,7 @@ For each link, include the full URL, a clear title, and a brief description expl
  * @returns Follow-up message string
  */
 export const buildFollowUpMessage = (domainsToAvoid: string[] = []): string => {
-  return `Based on your search results, provide 2-3 high-quality links for each topic in JSON format. ${domainsToAvoid.length > 0 ? `Avoid links from: ${domainsToAvoid.join(', ')}.` : ''}`;
+  return `Provide links for the topics in JSON format. ${domainsToAvoid.length > 0 ? `Avoid: ${domainsToAvoid.join(', ')}.` : ''}`;
 };
 
 /**

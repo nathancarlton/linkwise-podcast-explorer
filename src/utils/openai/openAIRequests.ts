@@ -24,29 +24,30 @@ export const makeInitialRequest = async (
   console.log('System prompt:', systemPrompt);
   console.log('User prompt:', prompt);
   
-  // Use the Responses API with a simplified configuration for web search
-  const response = await fetch('https://api.openai.com/v1/responses', {
-    method: 'POST',
-    headers: getOpenAIHeaders(apiKey),
-    body: JSON.stringify({
-      model: 'gpt-4o-mini',
-      tools: [
-        {
-          type: "web_search"
-        }
-      ],
-      input: prompt,
-      instructions: systemPrompt
-    })
-  });
+  try {
+    // Use the Responses API for web search
+    const response = await fetch('https://api.openai.com/v1/responses', {
+      method: 'POST',
+      headers: getOpenAIHeaders(apiKey),
+      body: JSON.stringify({
+        model: 'gpt-4o-mini',
+        tools: [{ type: "web_search" }],
+        input: prompt,
+        instructions: systemPrompt
+      })
+    });
 
-  if (!response.ok) {
-    const errorData = await response.json();
-    console.error('OpenAI API error:', errorData);
-    throw new Error(`OpenAI API error: ${response.status}`);
+    if (!response.ok) {
+      const errorData = await response.json();
+      console.error('OpenAI API error:', errorData);
+      throw new Error(`OpenAI API error: ${response.status}`);
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error('Error making initial request to OpenAI:', error);
+    throw error;
   }
-
-  return await response.json();
 };
 
 /**
@@ -96,47 +97,35 @@ export const makeFollowUpRequest = async (
     content: searchResults[index] || 'No results found'
   }));
   
-  console.log('Sending follow-up request to OpenAI with search results');
+  console.log('Sending follow-up request to OpenAI');
   
-  // Create the input array for the follow-up request
-  const inputMessages = [
-    {
-      role: 'system',
-      content: buildSystemPrompt(domainsToAvoid)
-    },
-    {
-      role: 'user',
-      content: prompt
-    },
-    message,
-    ...followUpMessages,
-    {
-      role: 'user',
-      content: buildFollowUpMessage(domainsToAvoid)
+  try {
+    // For the follow-up request, use chat completions API
+    // Important: We can't use JSON format with web search
+    const followUpResponse = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: getOpenAIHeaders(apiKey),
+      body: JSON.stringify({
+        model: 'gpt-4o-mini',
+        messages: [
+          { role: 'system', content: buildSystemPrompt(domainsToAvoid) },
+          { role: 'user', content: prompt },
+          message,
+          ...followUpMessages,
+          { role: 'user', content: buildFollowUpMessage(domainsToAvoid) }
+        ]
+      })
+    });
+    
+    if (!followUpResponse.ok) {
+      const errorData = await followUpResponse.json();
+      console.error('OpenAI API error during follow-up:', errorData);
+      throw new Error(`OpenAI API error during follow-up: ${followUpResponse.status}`);
     }
-  ];
-  
-  console.log('Follow-up input messages:', JSON.stringify(inputMessages));
-  
-  // For the follow-up request, we can use the JSON response format
-  // since we're not using web search anymore
-  const followUpResponse = await fetch('https://api.openai.com/v1/chat/completions', {
-    method: 'POST',
-    headers: getOpenAIHeaders(apiKey),
-    body: JSON.stringify({
-      model: 'gpt-4o-mini',
-      messages: inputMessages,
-      response_format: {
-        type: "json_object"
-      }
-    })
-  });
-  
-  if (!followUpResponse.ok) {
-    const errorData = await followUpResponse.json();
-    console.error('OpenAI API error during follow-up:', errorData);
-    throw new Error(`OpenAI API error during follow-up: ${followUpResponse.status}`);
+    
+    return await followUpResponse.json();
+  } catch (error) {
+    console.error('Error making follow-up request to OpenAI:', error);
+    throw error;
   }
-  
-  return await followUpResponse.json();
 };
