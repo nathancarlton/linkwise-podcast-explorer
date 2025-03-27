@@ -1,3 +1,4 @@
+
 /**
  * Functions for making requests to the OpenAI API
  */
@@ -138,7 +139,9 @@ Format your response as a simple JSON with this exact structure:
           content: buildFollowUpMessage(domainsToAvoid)
         }
       ],
-      response_format: { type: "json_object" }
+      text: {
+        format: { type: "json_object" }
+      }
     })
   });
   

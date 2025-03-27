@@ -39,14 +39,16 @@ export const findLinksWithOpenAI = async (
     // Make the initial request to OpenAI API
     const data = await makeInitialRequest(apiKey, prompt, domainsToAvoid);
     
+    console.log('Received response from OpenAI:', data);
+    
     if (!data || !data.choices || !data.choices[0] || !data.choices[0].message) {
-      console.error('Invalid response format from OpenAI API');
+      console.error('Invalid response format from OpenAI API:', data);
       return { processedTopics: [], usedMockData: false };
     }
     
     // Process the search results
     const message = data.choices[0].message;
-    console.log('OpenAI response:', message);
+    console.log('OpenAI response message:', message);
     
     // The responses API handles web search differently than the chat completions API
     // The relevant links should already be in the message content
@@ -62,6 +64,7 @@ export const findLinksWithOpenAI = async (
         console.log('Falling back to tool_calls processing method');
         // Handle tool calls and follow-up with additional messages
         const followUpData = await makeFollowUpRequest(message, prompt, apiKey, domainsToAvoid);
+        console.log('Follow-up response data:', followUpData);
         
         if (!followUpData.choices || !followUpData.choices[0] || !followUpData.choices[0].message) {
           console.error('Invalid response format from OpenAI API follow-up');
