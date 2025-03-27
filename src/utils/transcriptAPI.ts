@@ -310,8 +310,11 @@ Generate at least 15-20 total links across all topics (2-3 per topic): ${JSON.st
           continue;
         }
         
+        // Explicitly type the topic as ProcessedTopic to ensure TypeScript recognizes its structure
+        const typedTopic = topic as ProcessedTopic;
+        
         // Validate all links for a topic in parallel
-        for (const link of topic.links) {
+        for (const link of typedTopic.links) {
           if (!link || !link.url) {
             console.warn('Invalid link object, skipping:', link);
             continue;
@@ -321,7 +324,7 @@ Generate at least 15-20 total links across all topics (2-3 per topic): ${JSON.st
           validationPromises.push(
             validateUrl(link.url).then(isValid => {
               return {
-                topic,
+                topic: typedTopic,
                 link,
                 isValid
               };
@@ -334,7 +337,7 @@ Generate at least 15-20 total links across all topics (2-3 per topic): ${JSON.st
       const validationResults = await Promise.all(validationPromises);
       
       // Group the validation results by topic
-      const groupedResults = {};
+      const groupedResults: Record<string, ProcessedTopic> = {};
       
       validationResults.forEach(result => {
         const { topic, link, isValid } = result;
@@ -357,7 +360,7 @@ Generate at least 15-20 total links across all topics (2-3 per topic): ${JSON.st
       // Convert the grouped results to an array
       Object.values(groupedResults).forEach(groupedTopic => {
         if (groupedTopic.links.length > 0) {
-          verifiedTopics.push(groupedTopic as ProcessedTopic);
+          verifiedTopics.push(groupedTopic);
         }
       });
       
