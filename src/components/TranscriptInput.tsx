@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -6,7 +7,6 @@ import { Input } from '@/components/ui/input';
 import { ProcessingStage } from '@/types';
 import { Loader2, X, Plus, AlertTriangle } from 'lucide-react';
 import DomainAvoidList from './DomainAvoidList';
-import TopicAvoidList from './TopicAvoidList';
 import { Slider } from '@/components/ui/slider';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 
@@ -25,9 +25,7 @@ const TranscriptInput: React.FC<TranscriptInputProps> = ({
   const [wordCount, setWordCount] = useState(0);
   const [topicCount, setTopicCount] = useState(5);
   const [domainsToAvoid, setDomainsToAvoid] = useState<string[]>(['wikipedia.org', 'amazon.com']);
-  const [topicsToAvoid, setTopicsToAvoid] = useState<string[]>([]);
   const [newDomain, setNewDomain] = useState('');
-  const [newTopic, setNewTopic] = useState('');
   
   const handleTextChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const value = e.target.value;
@@ -38,7 +36,7 @@ const TranscriptInput: React.FC<TranscriptInputProps> = ({
 
   const handleProcess = () => {
     if (transcript.trim().length > 0) {
-      onProcess(transcript, topicCount, domainsToAvoid, topicsToAvoid);
+      onProcess(transcript, topicCount, domainsToAvoid);
     }
   };
   
@@ -63,22 +61,6 @@ const TranscriptInput: React.FC<TranscriptInputProps> = ({
   
   const handleDomainRemove = (domain: string) => {
     setDomainsToAvoid(domainsToAvoid.filter((d) => d !== domain));
-  };
-  
-  const handleTopicAdd = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (newTopic && topicsToAvoid.length < 10) {
-      const limitedTopic = newTopic.trim().substring(0, 32);
-      
-      if (limitedTopic && !topicsToAvoid.includes(limitedTopic)) {
-        setTopicsToAvoid([...topicsToAvoid, limitedTopic]);
-      }
-      setNewTopic('');
-    }
-  };
-  
-  const handleTopicRemove = (topic: string) => {
-    setTopicsToAvoid(topicsToAvoid.filter((t) => t !== topic));
   };
   
   const isDisabled = 
@@ -141,15 +123,6 @@ const TranscriptInput: React.FC<TranscriptInputProps> = ({
             newDomain={newDomain}
             setNewDomain={setNewDomain}
             onAdd={handleDomainAdd}
-            disabled={isDisabled}
-          />
-          
-          <TopicAvoidList 
-            topics={topicsToAvoid}
-            onRemove={handleTopicRemove}
-            newTopic={newTopic}
-            setNewTopic={setNewTopic}
-            onAdd={handleTopicAdd}
             disabled={isDisabled}
           />
         </div>
