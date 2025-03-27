@@ -197,6 +197,9 @@ const Index = () => {
     };
   }, []);
 
+  // Check if we have a valid API key
+  const hasValidApiKey = apiKey && apiKey.trim() !== '' && apiKey.startsWith('sk-');
+
   return (
     <div className="min-h-screen flex flex-col items-center py-12 px-4 md:px-8">
       <header className="w-full max-w-4xl text-center mb-8 animate-slide-down">
@@ -214,6 +217,7 @@ const Index = () => {
         <TranscriptInput 
           onProcess={handleProcessTranscript}
           processingStage={processingStage}
+          hasApiKey={hasValidApiKey}
         />
         
         {topics.length > 0 && (

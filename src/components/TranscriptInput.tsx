@@ -1,5 +1,4 @@
-
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -14,11 +13,13 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 interface TranscriptInputProps {
   onProcess: (transcript: string, topicCount: number, domainsToAvoid: string[], topicsToAvoid: string[]) => void;
   processingStage: ProcessingStage;
+  hasApiKey?: boolean;
 }
 
 const TranscriptInput: React.FC<TranscriptInputProps> = ({ 
   onProcess, 
-  processingStage 
+  processingStage,
+  hasApiKey = false
 }) => {
   const [transcript, setTranscript] = useState('');
   const [wordCount, setWordCount] = useState(0);
@@ -67,7 +68,7 @@ const TranscriptInput: React.FC<TranscriptInputProps> = ({
   const handleTopicAdd = (e: React.FormEvent) => {
     e.preventDefault();
     if (newTopic && topicsToAvoid.length < 10) {
-      const limitedTopic = newTopic.trim().substring(0, 31);
+      const limitedTopic = newTopic.trim().substring(0, 32);
       
       if (limitedTopic && !topicsToAvoid.includes(limitedTopic)) {
         setTopicsToAvoid([...topicsToAvoid, limitedTopic]);
@@ -84,7 +85,7 @@ const TranscriptInput: React.FC<TranscriptInputProps> = ({
     processingStage === ProcessingStage.ProcessingTranscript || 
     processingStage === ProcessingStage.FindingLinks;
 
-  const showApiKeyNeededAlert = processingStage === ProcessingStage.Initial && transcript.trim().length > 0;
+  const showApiKeyNeededAlert = !hasApiKey && transcript.trim().length > 0;
 
   return (
     <Card className="w-full animate-fade-in">

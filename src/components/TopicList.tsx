@@ -1,6 +1,8 @@
 
 import React from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Info } from 'lucide-react';
 
 interface TopicListProps {
   topics: Array<{
@@ -17,33 +19,42 @@ const TopicList: React.FC<TopicListProps> = ({ topics, onTopicToggle }) => {
   }
 
   return (
-    <div className="mb-4">
-      <h3 className="text-sm font-medium mb-2">Topics</h3>
-      <div className="flex flex-wrap gap-2">
-        {topics.map((topicItem) => (
-          <div 
-            key={topicItem.topic} 
-            className={`inline-flex items-center rounded-md px-3 py-1.5 text-sm gap-2 transition-colors 
-              ${topicItem.checked 
-                ? 'bg-primary/10 text-primary' 
-                : 'bg-muted/50 text-muted-foreground'}`}
-            title={topicItem.context}
-          >
-            <Checkbox 
-              id={`topic-${topicItem.topic}`}
-              checked={topicItem.checked} 
-              onCheckedChange={(checked) => onTopicToggle(topicItem.topic, !!checked)}
-            />
-            <label 
-              htmlFor={`topic-${topicItem.topic}`}
-              className="cursor-pointer"
+    <Card className="w-full mt-6 animate-slide-up">
+      <CardHeader>
+        <CardTitle>Discovered Topics ({topics.length})</CardTitle>
+      </CardHeader>
+      <CardContent className="relative">
+        <div className="flex items-center gap-2 mb-3 text-sm text-muted-foreground">
+          <Info className="h-4 w-4" />
+          <span>Select which topics to include in the generated links.</span>
+        </div>
+        
+        <div className="flex flex-wrap gap-2">
+          {topics.map((topicItem) => (
+            <div 
+              key={topicItem.topic} 
+              className={`inline-flex items-center rounded-md px-3 py-1.5 text-sm gap-2 transition-colors 
+                ${topicItem.checked 
+                  ? 'bg-primary/10 text-primary' 
+                  : 'bg-muted/50 text-muted-foreground'}`}
+              title={topicItem.context}
             >
-              {topicItem.topic}
-            </label>
-          </div>
-        ))}
-      </div>
-    </div>
+              <Checkbox 
+                id={`topic-${topicItem.topic}`}
+                checked={topicItem.checked} 
+                onCheckedChange={(checked) => onTopicToggle(topicItem.topic, !!checked)}
+              />
+              <label 
+                htmlFor={`topic-${topicItem.topic}`}
+                className="cursor-pointer"
+              >
+                {topicItem.topic}
+              </label>
+            </div>
+          ))}
+        </div>
+      </CardContent>
+    </Card>
   );
 };
 

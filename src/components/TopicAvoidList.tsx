@@ -67,7 +67,7 @@ const TopicAvoidList: React.FC<TopicAvoidListProps> = ({
       </form>
       
       <p className="text-xs text-muted-foreground">
-        Enter topics you want to exclude from the results. Limited to 31 characters per topic.
+        Enter topics you want to exclude from the results. Limited to 32 characters per topic.
       </p>
     </div>
   );
