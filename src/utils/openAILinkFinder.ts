@@ -52,12 +52,14 @@ export const findLinksWithOpenAI = async (
     // The relevant links should already be in the message content
     try {
       const content = message.content || "{}";
+      console.log('Processing content from response:', content);
       return await processAPIResponse(content, topicsFormatted, domainsToAvoid);
     } catch (error) {
       console.error('Error processing API response:', error);
       
       // If there are tool_calls in the response, fallback to the old method
       if (message.tool_calls && message.tool_calls.length > 0) {
+        console.log('Falling back to tool_calls processing method');
         // Handle tool calls and follow-up with additional messages
         const followUpData = await makeFollowUpRequest(message, prompt, apiKey, domainsToAvoid);
         

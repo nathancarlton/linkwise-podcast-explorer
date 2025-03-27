@@ -1,4 +1,3 @@
-
 /**
  * Functions for making requests to the OpenAI API
  */
@@ -23,7 +22,9 @@ export const makeInitialRequest = async (
     headers: getOpenAIHeaders(apiKey),
     body: JSON.stringify({
       model: 'gpt-4o-mini',
-      response_format: { type: "json_object" },
+      text: {
+        format: { type: "json_object" }
+      },
       tools: [
         {
           type: "web_search"
@@ -149,4 +150,3 @@ Format your response as a simple JSON with this exact structure:
   
   return await followUpResponse.json();
 };
-
