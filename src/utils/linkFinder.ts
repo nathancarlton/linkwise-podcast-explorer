@@ -1,6 +1,5 @@
 
 import { ProcessedTopic } from '../types';
-import { generateFallbackLinks } from './fallbackLinks';
 import { findLinksWithOpenAI } from './openAILinkFinder';
 
 /**
@@ -29,11 +28,6 @@ export const findLinksForTopics = async (
     return await findLinksWithOpenAI(topics, apiKey, domainsToAvoid);
   } catch (error) {
     console.error('Error finding links:', error);
-    // Use fallback links if there was an error
-    const formattedTopics = Array.isArray(topics) 
-      ? topics.map(t => typeof t === 'string' ? { topic: t } : t)
-      : [typeof topics === 'string' ? { topic: topics } : topics];
-    
-    return { processedTopics: generateFallbackLinks(formattedTopics), usedMockData: true };
+    return { processedTopics: [], usedMockData: false };
   }
 };

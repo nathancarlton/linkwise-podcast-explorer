@@ -2,7 +2,6 @@
 import { ProcessedTopic } from '../types';
 import { extractLinksFromText } from './textExtractor';
 import { validateTopicLinks } from './linkValidation';
-import { generateFallbackLinks } from './fallbackLinks';
 
 /**
  * Use OpenAI to find links for topics
@@ -16,7 +15,7 @@ export const findLinksWithOpenAI = async (
   topics: any[],
   apiKey: string,
   domainsToAvoid: string[] = []
-): Promise<{ processedTopics: ProcessedTopic[], usedMockData: boolean }> {
+): Promise<{ processedTopics: ProcessedTopic[], usedMockData: boolean }> => {
   console.log('Using OpenAI to find links for topics:', topics);
   
   try {
@@ -116,14 +115,14 @@ Use the search_web function to find information, then format your final response
 
     if (!response.ok) {
       console.error('OpenAI API error:', await response.json());
-      return { processedTopics: generateFallbackLinks(topicsFormatted), usedMockData: true };
+      return { processedTopics: [], usedMockData: false };
     }
 
     const data = await response.json();
     
     if (!data || !data.choices || !data.choices[0] || !data.choices[0].message) {
       console.error('Invalid response format from OpenAI API');
-      return { processedTopics: generateFallbackLinks(topicsFormatted), usedMockData: true };
+      return { processedTopics: [], usedMockData: false };
     }
     
     // Process the search results
@@ -214,14 +213,14 @@ MOST IMPORTANT: Only include links that are likely to be valid and accessible. F
       
       if (!followUpResponse.ok) {
         console.error('OpenAI API error during follow-up:', await followUpResponse.json());
-        return { processedTopics: generateFallbackLinks(topicsFormatted), usedMockData: true };
+        return { processedTopics: [], usedMockData: false };
       }
       
       const followUpData = await followUpResponse.json();
       
       if (!followUpData.choices || !followUpData.choices[0] || !followUpData.choices[0].message) {
         console.error('Invalid response format from OpenAI API follow-up');
-        return { processedTopics: generateFallbackLinks(topicsFormatted), usedMockData: true };
+        return { processedTopics: [], usedMockData: false };
       }
       
       const content = followUpData.choices[0].message.content;
@@ -235,12 +234,12 @@ MOST IMPORTANT: Only include links that are likely to be valid and accessible. F
         return await processAPIResponse(content, topicsFormatted, domainsToAvoid);
       } catch (error) {
         console.error('Error processing direct API response:', error);
-        return { processedTopics: generateFallbackLinks(topicsFormatted), usedMockData: true };
+        return { processedTopics: [], usedMockData: false };
       }
     }
   } catch (error) {
     console.error('Error finding links with OpenAI:', error);
-    return { processedTopics: generateFallbackLinks(topicsFormatted), usedMockData: true };
+    return { processedTopics: [], usedMockData: false };
   }
 };
 
@@ -273,7 +272,7 @@ export const processAPIResponse = async (
         return { processedTopics: extractedTopics, usedMockData: false };
       }
       
-      return { processedTopics: generateFallbackLinks(topicsFormatted), usedMockData: true };
+      return { processedTopics: [], usedMockData: false };
     }
     
     // Support different response formats from the API
@@ -281,7 +280,7 @@ export const processAPIResponse = async (
     
     if (formattedTopics.length === 0) {
       console.error('No processed topics found in API response');
-      return { processedTopics: generateFallbackLinks(topicsFormatted), usedMockData: true };
+      return { processedTopics: [], usedMockData: false };
     }
     
     // Create topic objects with validated links
@@ -304,14 +303,14 @@ export const processAPIResponse = async (
       }
     }
     
-    // If we have no topics with valid links, fall back to our hardcoded links
+    // If we have no topics with valid links, return empty array
     if (processedTopics.length === 0) {
-      return { processedTopics: generateFallbackLinks(topicsFormatted), usedMockData: true };
+      return { processedTopics: [], usedMockData: false };
     }
     
     return { processedTopics, usedMockData: false };
   } catch (error) {
     console.error('Error processing API response:', error);
-    return { processedTopics: generateFallbackLinks(topicsFormatted), usedMockData: true };
+    return { processedTopics: [], usedMockData: false };
   }
 };

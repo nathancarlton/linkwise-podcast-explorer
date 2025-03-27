@@ -12,29 +12,10 @@ export const validateUrl = async (url: string): Promise<boolean> => {
       return false;
     }
     
-    // Known high-quality domains we can trust without deep checking
-    const trustedDomains = [
-      'github.com', 'arxiv.org', 'nature.com', 'jamanetwork.com', 
-      'nejm.org', 'sciencedirect.com', 'pubmed.gov', 'healthline.com',
-      'mayoclinic.org', 'webmd.com', 'who.int', 'cdc.gov', 'medlineplus.gov',
-      'hbswk.hbs.edu', 'gsb.stanford.edu', 'sloanreview.mit.edu', 'strategy-business.com',
-      'nih.gov', 'cancer.gov', 'healthcare.gov', 'health.harvard.edu'
-    ];
-    
-    // Extract domain from URL
-    const urlObj = new URL(url);
-    const domain = urlObj.hostname.replace('www.', '');
-    
-    // For non-HTTPS URLs, reject by default for security unless explicitly trusted
-    if (!url.startsWith('https://') && !trustedDomains.includes(domain)) {
+    // For non-HTTPS URLs, reject by default for security
+    if (!url.startsWith('https://')) {
       console.warn(`Non-HTTPS URL rejected: ${url}`);
       return false;
-    }
-    
-    // For trusted domains, assume valid without heavy checking
-    if (trustedDomains.some(trusted => domain === trusted || domain.endsWith('.' + trusted))) {
-      console.log(`Trusted domain validated without deep checking: ${domain}`);
-      return true;
     }
     
     try {
@@ -69,18 +50,13 @@ export const validateUrl = async (url: string): Promise<boolean> => {
       
       if (error) {
         console.warn(`Edge function error validating URL: ${url}`, error);
-        
-        // Fallback: be more lenient when validation service fails
-        // This helps prevent empty results if the validation service is having issues
-        return true; // Consider valid if validator fails (fallback)
+        return false;
       }
       
       return data.isValid;
     } catch (edgeError) {
       console.warn(`Edge function request failed for ${url}`, edgeError);
-      
-      // If the edge function fails completely, be lenient to avoid empty results
-      return true; // Consider valid if validator service is unreachable (fallback)
+      return false;
     }
   } catch (error) {
     console.warn(`URL validation failed for ${url}:`, error?.message || error);
@@ -89,16 +65,9 @@ export const validateUrl = async (url: string): Promise<boolean> => {
 };
 
 // Helper function to validate URL content quality - simplified version
-const validateUrlContent = async (url: string, domain: string, trustedDomains: string[]): Promise<boolean> => {
+const validateUrlContent = async (url: string): Promise<boolean> => {
   try {
-    // For trusted domains, skip deep content checks
-    if (trustedDomains.some(trusted => 
-      domain === trusted || domain.endsWith('.' + trusted)
-    )) {
-      return true;
-    }
-    
-    // For other domains, do a basic check
+    // Do a basic check
     const response = await axios.get(url, {
       timeout: 5000,
       maxRedirects: 3,
@@ -119,8 +88,7 @@ const validateUrlContent = async (url: string, domain: string, trustedDomains: s
     
     return true;
   } catch (error) {
-    // On errors, be lenient to avoid empty results
     console.warn(`Content validation error for ${url}:`, error?.message || error);
-    return true; // Consider valid if content check fails (fallback)
+    return false;
   }
 };
