@@ -3,6 +3,7 @@ import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Info } from 'lucide-react';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 interface TopicListProps {
   topics: Array<{
@@ -29,30 +30,32 @@ const TopicList: React.FC<TopicListProps> = ({ topics, onTopicToggle }) => {
           <span>Select which topics to include in the generated links.</span>
         </div>
         
-        <div className="flex flex-wrap gap-2">
-          {topics.map((topicItem) => (
-            <div 
-              key={topicItem.topic} 
-              className={`inline-flex items-center rounded-md px-3 py-1.5 text-sm gap-2 transition-colors 
-                ${topicItem.checked 
-                  ? 'bg-primary/10 text-primary' 
-                  : 'bg-muted/50 text-muted-foreground'}`}
-              title={topicItem.context}
-            >
-              <Checkbox 
-                id={`topic-${topicItem.topic}`}
-                checked={topicItem.checked} 
-                onCheckedChange={(checked) => onTopicToggle(topicItem.topic, !!checked)}
-              />
-              <label 
-                htmlFor={`topic-${topicItem.topic}`}
-                className="cursor-pointer"
+        <ScrollArea className="max-h-[200px] overflow-y-auto pr-4">
+          <div className="flex flex-wrap gap-2">
+            {topics.map((topicItem) => (
+              <div 
+                key={topicItem.topic} 
+                className={`inline-flex items-center rounded-md px-3 py-1.5 text-sm gap-2 transition-colors 
+                  ${topicItem.checked 
+                    ? 'bg-primary/10 text-primary' 
+                    : 'bg-muted/50 text-muted-foreground'}`}
+                title={topicItem.context}
               >
-                {topicItem.topic}
-              </label>
-            </div>
-          ))}
-        </div>
+                <Checkbox 
+                  id={`topic-${topicItem.topic}`}
+                  checked={topicItem.checked} 
+                  onCheckedChange={(checked) => onTopicToggle(topicItem.topic, !!checked)}
+                />
+                <label 
+                  htmlFor={`topic-${topicItem.topic}`}
+                  className="cursor-pointer"
+                >
+                  {topicItem.topic}
+                </label>
+              </div>
+            ))}
+          </div>
+        </ScrollArea>
       </CardContent>
     </Card>
   );
