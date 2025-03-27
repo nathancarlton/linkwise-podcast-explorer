@@ -204,13 +204,16 @@ export const findLinksWithOpenAI = async (
             foundTopic = topicMap.values().next().value;
           }
           
-          // Extract description from surrounding text
-          const surroundingTextStart = Math.max(0, annotation.start_index - 150);
-          const surroundingTextEnd = Math.min(fullText.length, annotation.end_index + 150);
-          let description = fullText.substring(surroundingTextStart, surroundingTextEnd).trim();
+          // Extract description from the citation
+          let description = "";
           
-          // Clean up the description to remove markdown and make it readable
-          description = cleanDescription(description, annotation.url);
+          // Try to get description from citation text
+          if (annotation.text) {
+            description = annotation.text;
+          } else {
+            // Extract from page title or URL as fallback
+            description = `Information about ${title || extractDomainFromUrl(url)}`;
+          }
           
           // Add link to the found topic
           if (foundTopic) {
@@ -242,7 +245,7 @@ export const findLinksWithOpenAI = async (
     }
     
     // If no links found through annotations, try to extract from full text
-    if (processedTopics.length === 0) {
+    if (processedTopics.every(topic => topic.links.length === 0)) {
       // Simple URL extraction using regex
       const urlRegex = /https?:\/\/[^\s)]+/g;
       const foundUrls = fullText.match(urlRegex) || [];
@@ -283,13 +286,8 @@ export const findLinksWithOpenAI = async (
               // Mark this URL as used
               usedUrls.add(url);
               
-              // Extract some surrounding text for context
-              const surroundingTextStart = Math.max(0, urlIndex - 150);
-              const surroundingTextEnd = Math.min(fullText.length, urlIndex + url.length + 150);
-              let description = fullText.substring(surroundingTextStart, surroundingTextEnd).trim();
-              
-              // Clean up the description
-              description = cleanDescription(description, url);
+              // Create a simple description based on domain
+              const description = `Information about ${extractDomainFromUrl(url)}`;
               
               topicData.links.push({
                 url,
@@ -356,45 +354,14 @@ function extractTitleFromUrl(url: string): string {
   }
 }
 
-// Helper function to clean up description text
-function cleanDescription(description: string, url: string): string {
-  // Replace the URL in the description with empty string
-  description = description.replace(url, '');
-  
-  // Remove markdown formatting
-  description = description.replace(/\*\*/g, ''); // Remove bold markers
-  description = description.replace(/\[([^\]]+)\]\([^)]+\)/g, '$1'); // Replace markdown links with just the text
-  
-  // Remove broken formatting artifacts
-  description = description.replace(/\([^)]*\)/g, ''); // Remove parentheses content
-  description = description.replace(/[\[\]]/g, ''); // Remove brackets
-  
-  // Remove any start/end ellipses
-  description = description.replace(/^\.{3,}|\.{3,}$/g, '');
-  
-  // Remove leading/trailing punctuation
-  description = description.replace(/^[^\w]+|[^\w.]+$/g, '');
-  
-  // If the description starts with a dash or bullet, remove it
-  description = description.replace(/^[-•*]+ */g, '');
-  
-  // If we have a very short description or it's mostly garbage, generate a generic one
-  if (description.length < 20 || description.match(/[a-zA-Z]/g)?.length < 10) {
-    description = `Information about ${new URL(url).hostname.replace(/^www\./, '')}`;
+// Helper function to extract a domain from a URL
+function extractDomainFromUrl(url: string): string {
+  try {
+    const urlObj = new URL(url);
+    return urlObj.hostname.replace(/^www\./, '');
+  } catch (e) {
+    return 'website';
   }
-  
-  // Trim and ensure it ends with proper punctuation
-  description = description.trim();
-  if (!description.endsWith('.') && !description.endsWith('!') && !description.endsWith('?')) {
-    description += '.';
-  }
-  
-  // Capitalize first letter
-  if (description.length > 0) {
-    description = description.charAt(0).toUpperCase() + description.slice(1);
-  }
-  
-  return description;
 }
 
 // Export an empty function to satisfy imports

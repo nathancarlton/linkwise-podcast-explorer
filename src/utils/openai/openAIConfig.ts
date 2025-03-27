@@ -15,7 +15,8 @@ export const buildSystemPrompt = (domainsToAvoid: string[] = []): string => {
     : '';
 
   return `Find high-quality links for the given topics. For each topic, provide at least 2-3 different links from varied sources. 
-  Each link should be directly relevant to its specific topic. Format each link with a clean, concise description that summarizes the main content of the page.
+  Each link should include a clean, accurate description of the page content in plain text (no markdown).
+  Each description should be one clear, concise sentence that summarizes what the user will find on the page.
   ${domainsToAvoidStr}`;
 };
 
@@ -33,6 +34,7 @@ export const buildUserPrompt = (
   const topicsJson = JSON.stringify(topicsFormatted);
   
   return `Find links for: ${topicsJson}. For each topic, find at least 2-3 different links from varied sources. 
+  Provide clean, concise descriptions in plain text (no markdown).
   ${domainsToAvoid.length > 0 ? `Avoid these domains: ${domainsToAvoid.join(', ')}.` : ''}`;
 };
 
