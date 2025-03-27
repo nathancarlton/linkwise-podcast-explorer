@@ -36,7 +36,7 @@ export const makeInitialRequest = async (
         }],
         input: prompt,
         instructions: systemPrompt,
-        max_output_tokens: 4000 // Increased to handle multiple topics with multiple links
+        max_output_tokens: 8000 // Increased to handle better descriptions and more links
       })
     });
 

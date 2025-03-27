@@ -165,6 +165,7 @@ export const findLinksWithOpenAI = async (
             continue;
           }
           
+          // Get title from annotation metadata
           const title = annotation.title || extractTitleFromUrl(url);
           
           // Find which topic this annotation belongs to
@@ -204,15 +205,43 @@ export const findLinksWithOpenAI = async (
             foundTopic = topicMap.values().next().value;
           }
           
-          // Extract description from the citation
+          // Extract description from the annotation
           let description = "";
           
-          // Try to get description from citation text
+          // Try to get description directly from the citation text
           if (annotation.text) {
-            description = annotation.text;
-          } else {
-            // Extract from page title or URL as fallback
-            description = `Information about ${title || extractDomainFromUrl(url)}`;
+            // Extract plain text description from surrounding context
+            const contextStart = Math.max(0, annotation.start_index - 100);
+            const contextEnd = Math.min(fullText.length, annotation.end_index + 150);
+            const context = fullText.substring(contextStart, contextEnd);
+            
+            // Look for a sentence fragment containing a description
+            // Try to find a standalone sentence before or after the URL
+            const sentences = context.split(/[.!?]\s+/);
+            
+            // Find the most relevant sentence that doesn't contain markdown
+            for (const sentence of sentences) {
+              if (
+                !sentence.includes('http') && 
+                !sentence.includes('](') && 
+                sentence.length > 15 && 
+                !sentence.includes('*') &&
+                !sentence.match(/^\s*\d+\.\s*/)
+              ) {
+                description = sentence.trim();
+                if (description) break;
+              }
+            }
+            
+            // Fallback: use the annotation text itself and clean it
+            if (!description && annotation.text) {
+              description = annotation.text.replace(/\[|\]|\(|\)|http\S+/g, '').trim();
+            }
+          }
+          
+          // If we couldn't extract a clean description, use site name as fallback
+          if (!description || description.length < 10 || description.includes('[') || description.includes(']')) {
+            description = `Information about ${title} from ${extractDomainFromUrl(url)}`;
           }
           
           // Add link to the found topic
@@ -286,8 +315,27 @@ export const findLinksWithOpenAI = async (
               // Mark this URL as used
               usedUrls.add(url);
               
-              // Create a simple description based on domain
-              const description = `Information about ${extractDomainFromUrl(url)}`;
+              // Find surrounding text for description
+              const contextStart = Math.max(0, urlIndex - 100);
+              const contextEnd = Math.min(fullText.length, urlIndex + url.length + 100);
+              const context = fullText.substring(contextStart, contextEnd);
+              
+              let description = "";
+              // Try to extract a sentence that might be a description
+              const sentences = context.split(/[.!?]\s+/);
+              for (const sentence of sentences) {
+                if (!sentence.includes('http') && 
+                    !sentence.includes('](') && 
+                    sentence.length > 15 && 
+                    !sentence.includes('*')) {
+                  description = sentence.trim();
+                  if (description) break;
+                }
+              }
+              
+              if (!description) {
+                description = `Information about ${extractDomainFromUrl(url)}`;
+              }
               
               topicData.links.push({
                 url,
