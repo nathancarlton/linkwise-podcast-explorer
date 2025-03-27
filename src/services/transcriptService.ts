@@ -60,8 +60,16 @@ export const transcriptService = {
     domainsToAvoid: string[]
   ): Promise<{ processedTopics: ProcessedTopic[] }> {
     try {
+      // Make sure each topic has proper structure
+      const formattedTopics = topics.map(topic => {
+        if (typeof topic === 'string') {
+          return { topic, context: 'Manually added topic' };
+        }
+        return topic;
+      });
+      
       const { processedTopics } = await findLinksForTopics(
-        topics, 
+        formattedTopics, 
         apiKey,
         domainsToAvoid
       );
