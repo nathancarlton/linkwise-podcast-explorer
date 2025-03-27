@@ -25,14 +25,12 @@ export const makeInitialRequest = async (
   console.log('User prompt:', prompt);
   
   // Use the responses API endpoint specifically designed for web search
+  // Note: We're removing the JSON format requirement since it's incompatible with web search
   const response = await fetch('https://api.openai.com/v1/responses', {
     method: 'POST',
     headers: getOpenAIHeaders(apiKey),
     body: JSON.stringify({
       model: 'gpt-4o-mini',
-      text: {
-        format: { type: "json_object" }
-      },
       tools: [
         {
           type: "web_search"
@@ -129,7 +127,8 @@ export const makeFollowUpRequest = async (
   
   console.log('Follow-up input messages:', JSON.stringify(inputMessages));
   
-  // Send follow-up request with search results using the Chat Completions API
+  // For the follow-up request, we can use the JSON response format
+  // since we're not using web search anymore
   const followUpResponse = await fetch('https://api.openai.com/v1/chat/completions', {
     method: 'POST',
     headers: getOpenAIHeaders(apiKey),
