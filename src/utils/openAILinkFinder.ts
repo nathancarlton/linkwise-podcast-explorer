@@ -1,7 +1,6 @@
 
 import { ProcessedTopic } from '../types';
-import { makeInitialRequest, makeFollowUpRequest } from './openai/openAIRequests';
-import { processAPIResponse } from './openai/openAIResponseProcessor';
+import { makeInitialRequest } from './openai/openAIRequests';
 import { buildUserPrompt } from './openai/openAIConfig';
 
 /**
@@ -43,126 +42,109 @@ export const findLinksWithOpenAI = async (
     
     console.log('Received response from OpenAI:', data);
     
-    // Process the response from the Responses API
     if (!data || !data.output) {
       console.error('Invalid response format from OpenAI API:', data);
       return { processedTopics: [], usedMockData: false };
     }
     
-    // Process output from the Responses API
-    try {
-      // Get the output messages
-      const output = data.output;
-      console.log('Processing OpenAI response');
+    // Extract links from the content
+    const processedTopics: ProcessedTopic[] = [];
+    
+    // Process each topic from our input
+    for (const topic of topicsFormatted) {
+      const topicName = topic.topic;
+      const links = [];
       
-      // Extract links from the content
-      const processedTopics: ProcessedTopic[] = [];
-      
-      // Process each topic from our input
-      for (const topic of topicsFormatted) {
-        const topicName = topic.topic;
-        const links = [];
-        
-        // Look for URLs in the response content
-        for (const message of output) {
-          if (message.content) {
-            // Extract URLs with regex
-            const urlRegex = /(https?:\/\/[^\s)">]+)/g;
-            const urls = message.content.match(urlRegex) || [];
-            
-            for (const url of urls) {
-              // Try to find a title near the URL
-              const beforeUrl = message.content.split(url)[0];
-              const afterUrl = message.content.split(url)[1];
+      // Look for URLs in the response output
+      for (const output of data.output) {
+        if (output.type === 'message' && output.content && Array.isArray(output.content)) {
+          // Process each content item
+          for (const contentItem of output.content) {
+            if (contentItem.type === 'text' && contentItem.text) {
+              // Extract URLs with regex
+              const urlRegex = /(https?:\/\/[^\s)">]+)/g;
+              const urls = contentItem.text.match(urlRegex) || [];
               
-              // Look for potential title in markdown link format [Title](URL)
-              let title = '';
-              const titleRegex = /\[([^\]]+)\]\([^\)]*$/;
-              const titleMatch = beforeUrl.match(titleRegex);
-              
-              if (titleMatch) {
-                title = titleMatch[1];
-              } else {
-                // Try to get title from surrounding text
-                const lines = message.content.split('\n');
-                for (const line of lines) {
-                  if (line.includes(url)) {
-                    // Take line before URL or part of line before URL as title
-                    const lineParts = line.split(url);
-                    if (lineParts[0] && lineParts[0].trim()) {
-                      title = lineParts[0].trim();
-                      // Remove markdown formatting if any
-                      title = title.replace(/^\s*[\*\-\d\.]+\s*/, '').trim();
-                      title = title.replace(/\[|\]|\(|\)/g, '').trim();
-                      break;
+              for (const url of urls) {
+                // Extract title and description from nearby text
+                let title = '';
+                let description = '';
+                
+                // Use surrounding text for context
+                const textParts = contentItem.text.split(url);
+                const beforeUrl = textParts[0] || '';
+                const afterUrl = textParts[1] || '';
+                
+                // Try to find a title from text before URL
+                const titleRegex = /\*\*([^*]+)\*\*|"([^"]+)"|'([^']+)'|([A-Z][a-z]+ [A-Z][a-z]+)/;
+                const titleMatch = beforeUrl.match(titleRegex);
+                
+                if (titleMatch) {
+                  // Use the first non-undefined match group
+                  title = titleMatch.slice(1).find(m => m !== undefined) || '';
+                }
+                
+                // If no title found, try to extract from URL
+                if (!title) {
+                  try {
+                    const urlObj = new URL(url);
+                    const pathSegments = urlObj.pathname.split('/').filter(s => s);
+                    if (pathSegments.length > 0) {
+                      // Use last path segment
+                      title = pathSegments[pathSegments.length - 1]
+                        .replace(/-/g, ' ')
+                        .replace(/\.(html|php|asp|jsp)$/, '')
+                        .split(' ')
+                        .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+                        .join(' ');
+                    } else {
+                      // Use hostname
+                      title = urlObj.hostname.replace('www.', '');
                     }
+                  } catch (e) {
+                    title = topicName;
                   }
                 }
-              }
-              
-              // If no title found, use domain name
-              if (!title) {
-                try {
-                  const urlObj = new URL(url);
-                  title = `${urlObj.hostname} - iPhone Prices`;
-                } catch (e) {
-                  title = 'iPhone Price Link';
+                
+                // Extract description from text after URL
+                const descRegex = /[^.!?]+[.!?]/;
+                const descMatch = afterUrl.match(descRegex);
+                
+                if (descMatch) {
+                  description = descMatch[0].trim();
+                } else {
+                  // Use generic description
+                  description = `Information about ${topicName}`;
                 }
+                
+                links.push({
+                  url,
+                  title: title || `Link about ${topicName}`,
+                  description: description
+                });
               }
-              
-              // Extract a description from text after the URL
-              let description = '';
-              if (afterUrl) {
-                // Take up to 150 chars after URL as description
-                description = afterUrl.substring(0, 150).trim();
-                // Clean up description, remove markdown, etc.
-                description = description.replace(/^\s*[\*\-\d\.]+\s*/, '').trim();
-                description = description.replace(/^\)/, '').trim();
-              }
-              
-              if (!description && beforeUrl) {
-                // Try to get description from before the URL
-                const lines = beforeUrl.split('\n');
-                if (lines.length > 0) {
-                  description = lines[lines.length - 1].trim();
-                }
-              }
-              
-              // If still no description, create a generic one
-              if (!description) {
-                description = `Information about ${topicName}`;
-              }
-              
-              links.push({
-                url,
-                title: title || `Link about ${topicName}`,
-                description: description
-              });
             }
           }
         }
-        
-        // If we found links for this topic, add it to processed topics
-        if (links.length > 0) {
-          processedTopics.push({
-            topic: topicName,
-            context: topic.context || '',
-            links
-          });
-        }
       }
       
-      console.log('Extracted links:', processedTopics);
-      return { processedTopics, usedMockData: false };
-    } catch (error) {
-      console.error('Error processing OpenAI output:', error);
-      return { processedTopics: [], usedMockData: false };
+      // Add topic with links to processed topics
+      if (links.length > 0) {
+        processedTopics.push({
+          topic: topicName,
+          context: topic.context || '',
+          links
+        });
+      }
     }
+    
+    console.log('Extracted links:', processedTopics);
+    return { processedTopics, usedMockData: false };
   } catch (error) {
     console.error('Error finding links with OpenAI:', error);
     return { processedTopics: [], usedMockData: false };
   }
 };
 
-// Re-export the processAPIResponse function
-export { processAPIResponse };
+// Export an empty function to satisfy imports
+export const processAPIResponse = () => {};

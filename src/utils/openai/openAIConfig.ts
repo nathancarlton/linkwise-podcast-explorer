@@ -36,16 +36,6 @@ export const buildUserPrompt = (
 };
 
 /**
- * Build a follow-up message to request quality links
- * 
- * @param domainsToAvoid Domains to exclude from results
- * @returns Follow-up message string
- */
-export const buildFollowUpMessage = (domainsToAvoid: string[] = []): string => {
-  return `Provide links for the topics in JSON format. ${domainsToAvoid.length > 0 ? `Avoid: ${domainsToAvoid.join(', ')}.` : ''}`;
-};
-
-/**
  * Get the headers for OpenAI API requests
  * 
  * @param apiKey OpenAI API key
