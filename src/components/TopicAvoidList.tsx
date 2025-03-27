@@ -48,12 +48,12 @@ const TopicAvoidList: React.FC<TopicAvoidListProps> = ({
       <form onSubmit={onAdd} className="flex items-center gap-2">
         <Input
           type="text"
-          placeholder="Enter topic to avoid (max 31 characters)"
+          placeholder="Enter topic to avoid (max 32 characters)"
           value={newTopic}
           onChange={(e) => setNewTopic(e.target.value)}
           disabled={disabled || topics.length >= 10}
           className="flex-1"
-          maxLength={31}
+          maxLength={32}
         />
         <Button 
           type="submit" 

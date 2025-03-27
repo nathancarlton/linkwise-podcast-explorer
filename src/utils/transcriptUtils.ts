@@ -48,19 +48,19 @@ export const processTranscript = async (
         messages: [
           {
             role: 'system',
-            content: `You are an assistant that extracts the most important, focused, and specific topics from podcast transcripts. 
+            content: `You are an expert podcast transcript analyst designed to extract the most relevant, useful, important, focused, and specific topics from podcast transcripts. 
               
 Extract exactly ${safeTopicCount} topics from the transcript provided.
 
 Guidelines:
-- Be extremely specific - e.g., "The impact of quantum computing on cryptography" instead of just "Quantum computing"
-- Each topic should be 2-5 words, concise yet descriptive
+- If the topic is a concept, be extremely specific, based on the podcast transcript - e.g., "The impact of quantum computing on cryptography" instead of just "Quantum computing"
+- Each topic should be 1-10 words, concise yet descriptive
 - Focus on the core concepts, techniques, books, products, organizations or people discussed in depth
-- For any books mentioned, ALWAYS extract them as "[Book Title] by [Author Name]"
+- For any books mentioned, extract them as "[Book Title] by [Author Name]"
   - Example: use "Range by David Epstein" instead of "Books on Generalist Skills"
   - Example: use "Competing in the Age of AI by Karim Lakhani" instead of "Books about AI Strategy"
 - For techniques or methods discussed, be specific about what approach or methodology was mentioned
-- Prioritize unique topics that aren't commonly found in every podcast on this subject
+- Prioritize topics that will help the listeners dive deeper into the subjects discussed in the transcript
 - Do not include generic topics that could apply to any podcast
 - Extract topics that someone would want to learn more about
 - Include the context to understand what's interesting about this topic
@@ -78,7 +78,7 @@ ALWAYS capture SPECIFIC BOOK TITLES with their AUTHORS when mentioned, using the
 
 ${topicsToAvoidStr}
 
-Provide each topic as a concise 2-5 word phrase paired with a brief context sentence explaining its significance.
+Provide each topic as a concise 1-10 word phrase paired with a brief context sentence explaining its significance.
 
 Transcript: ${transcript}`
           }
