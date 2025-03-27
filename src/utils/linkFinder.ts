@@ -62,10 +62,9 @@ ${domainsToAvoidStr}
 Here are the topics: ${JSON.stringify(topics)}`
           }
         ],
-        temperature: 0.2,
         tools: [
           {
-            "type": "web_search"
+            type: "web_search"
           }
         ],
         tool_choice: { "type": "web_search" }

@@ -18,7 +18,7 @@ export const processTranscript = async (
   apiKey?: string,
   topicCount: number = 5,
   topicsToAvoid: string[] = []
-): Promise<{ topics: string[], usedMockData: boolean }> => {
+): Promise<{ topics: any[], usedMockData: boolean }> => {
   console.log('Processing transcript with length:', transcript.length);
   console.log('Topic count requested:', topicCount);
   console.log('Topics to avoid:', topicsToAvoid);
@@ -117,11 +117,8 @@ Transcript: ${transcript}`
         return { topics: [], usedMockData: false };
       }
       
-      // Return just the topic names for backward compatibility
-      const topicNames = extractedTopics.map((item: any) => item);
-      
-      console.log('Extracted topics:', topicNames);
-      return { topics: topicNames, usedMockData: false };
+      console.log('Extracted topics:', extractedTopics);
+      return { topics: extractedTopics, usedMockData: false };
     } catch (parseError) {
       console.error('Error parsing OpenAI response:', parseError);
       return { topics: [], usedMockData: false };
