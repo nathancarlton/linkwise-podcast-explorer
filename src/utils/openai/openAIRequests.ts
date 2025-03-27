@@ -17,11 +17,18 @@ export const makeInitialRequest = async (
   prompt: string,
   domainsToAvoid: string[] = []
 ): Promise<any> => {
-  const response = await fetch('https://api.openai.com/v1/chat/completions', {
+  // Use the responses API endpoint specifically designed for web search
+  const response = await fetch('https://api.openai.com/v1/responses', {
     method: 'POST',
     headers: getOpenAIHeaders(apiKey),
     body: JSON.stringify({
       model: 'gpt-4o-mini',
+      response_format: { type: "json_object" },
+      tools: [
+        {
+          type: "web_search"
+        }
+      ],
       messages: [
         {
           role: 'system',
@@ -32,26 +39,6 @@ export const makeInitialRequest = async (
           content: prompt
         }
       ],
-      tools: [
-        {
-          type: "function",
-          function: {
-            name: "search_web",
-            description: "Search the web for information relevant to the user's request",
-            parameters: {
-              type: "object",
-              properties: {
-                query: {
-                  type: "string",
-                  description: "The search query to use"
-                }
-              },
-              required: ["query"]
-            }
-          }
-        }
-      ],
-      tool_choice: "auto"
     })
   });
 
@@ -162,3 +149,4 @@ Format your response as a simple JSON with this exact structure:
   
   return await followUpResponse.json();
 };
+
