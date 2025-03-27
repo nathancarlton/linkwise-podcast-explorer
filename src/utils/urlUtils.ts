@@ -9,13 +9,7 @@ export const validateUrl = async (url: string): Promise<boolean> => {
       return false;
     }
     
-    // Check if this is a Forbes URL, we'll consider them valid
-    if (url.includes('forbes.com')) {
-      console.log(`Treating Forbes URL as valid: ${url}`);
-      return true;
-    }
-    
-    // Consider all others valid for now
+    // Consider all URLs valid for now
     return true;
   } catch (error) {
     console.error(`Error validating URL ${url}:`, error);
