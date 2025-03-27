@@ -56,6 +56,8 @@ Guidelines:
 - Be extremely specific - e.g., "The impact of quantum computing on cryptography" instead of just "Quantum computing"
 - Each topic should be 2-5 words, concise yet descriptive
 - Focus on the core concepts, techniques, books, products, organizations or people discussed in depth
+- For books mentioned, extract the SPECIFIC titles with their authors, not general categories like "Books on Creativity"
+- For techniques or methods discussed, be specific about what approach or methodology was mentioned
 - Prioritize unique topics that aren't commonly found in every podcast on this subject
 - Do not include generic topics that could apply to any podcast
 - Extract topics that someone would want to learn more about
@@ -70,6 +72,8 @@ The "topic" is the specific topic name, and "context" is a brief sentence explai
             role: 'user',
             content: `Extract the ${safeTopicCount} most important and specific topics from this podcast transcript, focusing on concepts, techniques, books, products, people or organizations discussed in detail. 
             
+Make sure to capture SPECIFIC BOOK TITLES with their authors when mentioned, not just general categories about books.
+
 ${topicsToAvoidStr}
 
 Provide each topic as a concise 2-5 word phrase paired with a brief context sentence explaining its significance.

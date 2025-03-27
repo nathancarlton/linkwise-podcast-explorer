@@ -48,6 +48,8 @@ Guidelines:
 - Focus on quality and relevance over quantity
 - Look for authoritative, reliable sources
 - Ensure the links are to real, accessible content that actually exists
+- Find official publisher pages for books, not just Amazon or Wikipedia links
+- When books are mentioned, find the author's official site or publisher page for that specific book
 - For each link, include the full URL, title, and a brief description
 ${domainsToAvoidStr}
 
@@ -57,6 +59,7 @@ Use your web search capability to find the most relevant information for each to
             role: 'user',
             content: `Find specific, high-quality links for these podcast topics. For each topic, provide 2-3 links to SPECIFIC PAGES that address the exact context of the topic.
 
+For any books mentioned, find their publisher pages or author websites, not retailer pages.
 ${domainsToAvoidStr}
 
 Here are the topics: ${JSON.stringify(topics)}`
@@ -67,7 +70,7 @@ Here are the topics: ${JSON.stringify(topics)}`
             type: "web_search"
           }
         ],
-        tool_choice: { "type": "web_search" }
+        tool_choice: "auto"
       })
     });
 
@@ -88,16 +91,15 @@ Here are the topics: ${JSON.stringify(topics)}`
     const message = data.choices[0].message;
     
     // Process the search results to get the links
-    // We need to extract the links from the tool calls and format them as ProcessedTopic objects
     let processedTopics: ProcessedTopic[] = [];
     
-    // Now send another request to format the search results into our desired format
     if (message.tool_calls && message.tool_calls.length > 0) {
+      // First, we need to get the search results
       const searchResults = message.tool_calls
         .filter((call: any) => call.type === "web_search")
         .map((call: any) => call.web_search);
       
-      // Send the search results to OpenAI to format them into our desired format
+      // Now send another request to format the search results
       const formatResponse = await fetch('https://api.openai.com/v1/chat/completions', {
         method: 'POST',
         headers: {
