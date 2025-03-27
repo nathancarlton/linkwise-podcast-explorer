@@ -32,12 +32,11 @@ export const makeInitialRequest = async (
       body: JSON.stringify({
         model: 'gpt-4o-mini',
         tools: [{ 
-          type: "web_search_preview",
-          search_context_size: "large" // Request more content for better topic extraction
+          type: "web_search_preview"
         }],
         input: prompt,
         instructions: systemPrompt,
-        max_output_tokens: 1000 // Request more tokens to ensure space for all topics
+        max_output_tokens: 2000 // Increased for multiple topics
       })
     });
 

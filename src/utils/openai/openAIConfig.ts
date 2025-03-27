@@ -14,7 +14,7 @@ export const buildSystemPrompt = (domainsToAvoid: string[] = []): string => {
     ? `Avoid linking to these domains: ${domainsToAvoid.join(', ')}.` 
     : '';
 
-  return `For each of the given topics, search the web and find relevant, high-quality links. For EACH topic, clearly mark the topic with a number or heading (e.g., "1. Topic Name:") and provide at least 2 useful links. ${domainsToAvoidStr}`;
+  return `Find high-quality links for the given topics. ${domainsToAvoidStr}`;
 };
 
 /**
@@ -28,13 +28,9 @@ export const buildUserPrompt = (
   topicsFormatted: any[],
   domainsToAvoid: string[] = []
 ): string => {
-  const topicsStr = topicsFormatted.map((t, i) => `${i+1}. ${t.topic}`).join('\n');
+  const topicsJson = JSON.stringify(topicsFormatted);
   
-  const domainsToAvoidStr = domainsToAvoid.length > 0 
-    ? `\n\nAvoid these domains: ${domainsToAvoid.join(', ')}.` 
-    : '';
-
-  return `Find links for each of these topics (search for EACH topic separately):\n${topicsStr}${domainsToAvoidStr}\n\nFor each topic, provide at least 2 relevant links with clear section headers.`;
+  return `Find links for: ${topicsJson}. ${domainsToAvoid.length > 0 ? `Avoid these domains: ${domainsToAvoid.join(', ')}.` : ''}`;
 };
 
 /**

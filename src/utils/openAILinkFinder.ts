@@ -53,187 +53,221 @@ export const findLinksWithOpenAI = async (
     // Map topics to their processed results
     const topicMap = new Map<string, ProcessedTopic>();
     topicsFormatted.forEach(t => {
-      topicMap.set(t.topic.toLowerCase(), {
-        topic: t.topic,
+      topicMap.set(t.topic.toLowerCase().replace(/,$/, '').trim(), {
+        topic: t.topic.replace(/,$/, '').trim(),
         context: t.context || '',
         links: []
       });
     });
     
-    // Extract message content from output
-    let fullText = '';
-    let annotations: any[] = [];
+    // Find message output in the response
+    let messageContent = null;
     
     // Find message outputs in the response
     for (const output of data.output) {
       if (output.type === 'message' && output.content && Array.isArray(output.content)) {
         for (const contentItem of output.content) {
-          // Check for annotations which contain the URLs
-          if (contentItem.annotations && Array.isArray(contentItem.annotations)) {
-            annotations = contentItem.annotations;
-            fullText = contentItem.text || '';
-            console.log('Found annotations:', annotations);
+          if (contentItem.text) {
+            messageContent = contentItem;
+            break;
           }
         }
       }
     }
     
-    // Process the full text to identify topic sections
-    const topicSections: { [key: string]: { startIndex: number, endIndex: number } } = {};
-    
-    // Create a regex pattern for finding all topic headers in the text
-    const allTopicsPattern = topicsFormatted.map(t => t.topic).join('|');
-    const topicRegex = new RegExp(`(${allTopicsPattern})`, 'gi');
-    
-    // Find all topic mentions in the text
-    let match;
-    while ((match = topicRegex.exec(fullText)) !== null) {
-      const matchedTopic = match[0].toLowerCase();
-      const startIndex = match.index;
-      
-      // Find next topic mention or end of text
-      topicRegex.lastIndex = startIndex + matchedTopic.length;
-      const nextMatch = topicRegex.exec(fullText);
-      const endIndex = nextMatch ? nextMatch.index : fullText.length;
-      
-      // Reset regex to look for next occurrence from the beginning
-      if (nextMatch) topicRegex.lastIndex = 0;
-      
-      // Only add if topic is in our list
-      for (const [topicKey] of topicMap.entries()) {
-        if (matchedTopic.includes(topicKey)) {
-          topicSections[topicKey] = {
-            startIndex,
-            endIndex
-          };
-          break;
-        }
-      }
+    if (!messageContent) {
+      console.log('No message content found in the response');
+      return { processedTopics: [], usedMockData: false };
     }
     
-    // If no sections found (e.g., for single topic), use the entire text
-    if (Object.keys(topicSections).length === 0 && topicMap.size > 0) {
-      const firstTopic = topicsFormatted[0].topic.toLowerCase();
-      topicSections[firstTopic] = { startIndex: 0, endIndex: fullText.length };
-    }
+    const fullText = messageContent.text || '';
+    const annotations = messageContent.annotations || [];
     
-    // Process annotations (URLs) and assign to topics based on position in text
-    for (const annotation of annotations) {
-      if (annotation.type === 'url_citation' && annotation.url) {
-        const url = annotation.url;
-        let title = annotation.title || '';
+    console.log('Found annotations:', annotations);
+    
+    // If we have annotations, extract links for each topic
+    if (annotations && annotations.length > 0) {
+      // First, try to find topic sections in the text
+      let currentTopic = '';
+      const topicSections: { [key: string]: { startIndex: number, endIndex: number } } = {};
+      
+      // Create a simple parser to identify topic sections
+      const lines = fullText.split('\n');
+      let inSection = false;
+      let sectionStart = 0;
+      
+      // Look for topic headers in the text
+      const topicRegex = /\*\*(.*?):\*\*|\*\*\d+\.\s*(.*?)\*\*|^\d+\.\s*(.*?)$/m;
+      
+      for (let i = 0; i < lines.length; i++) {
+        const line = lines[i];
+        const match = line.match(topicRegex);
         
-        // If no title, try to extract from URL
-        if (!title) {
-          try {
-            const urlObj = new URL(url);
-            title = urlObj.hostname.replace('www.', '');
-          } catch (e) {
-            title = 'Link';
+        if (match) {
+          // End previous section if any
+          if (inSection && currentTopic) {
+            topicSections[currentTopic.toLowerCase()] = {
+              startIndex: sectionStart,
+              endIndex: fullText.indexOf(line, sectionStart)
+            };
           }
-        }
-        
-        // Find which topic section this link belongs to
-        let assignedTopic: ProcessedTopic | null = null;
-        
-        for (const [topicKey, section] of Object.entries(topicSections)) {
-          // Check if annotation falls within a topic section
-          if (annotation.start_index >= section.startIndex && annotation.start_index < section.endIndex) {
-            const topic = topicMap.get(topicKey);
-            if (topic) {
-              assignedTopic = topic;
+          
+          // Extract topic name (could be in different capture groups)
+          currentTopic = (match[1] || match[2] || match[3]).trim();
+          sectionStart = fullText.indexOf(line);
+          inSection = true;
+          
+          // Try to match with our topics
+          for (const [topicKey, topicData] of topicMap.entries()) {
+            if (currentTopic.toLowerCase().includes(topicKey.toLowerCase()) || 
+                topicKey.toLowerCase().includes(currentTopic.toLowerCase())) {
+              currentTopic = topicData.topic; // Use our exact topic name
               break;
             }
           }
         }
-        
-        // If no topic found by position, try to match by content
-        if (!assignedTopic) {
-          // Extract surrounding text for context
-          const startIndex = Math.max(0, annotation.start_index - 100);
-          const endIndex = Math.min(fullText.length, annotation.end_index + 100);
-          const surroundingText = fullText.substring(startIndex, endIndex).toLowerCase();
-          
-          for (const [topicKey, topic] of topicMap.entries()) {
-            if (surroundingText.includes(topicKey)) {
-              assignedTopic = topic;
-              break;
-            }
-          }
-          
-          // If still no match, assign to first topic as fallback
-          if (!assignedTopic && topicMap.size > 0) {
-            assignedTopic = topicMap.values().next().value;
-          }
-        }
-        
-        // Extract description from surrounding text
-        const startIndex = Math.max(0, annotation.start_index - 100);
-        const endIndex = Math.min(fullText.length, annotation.end_index + 100);
-        let description = fullText.substring(startIndex, endIndex).trim();
-        
-        // Shorten description if too long
-        if (description.length > 200) {
-          description = description.substring(0, 197) + '...';
-        }
-        
-        // Add the link to the assigned topic
-        if (assignedTopic) {
-          assignedTopic.links.push({
-            url,
-            title,
-            description
-          });
-        }
       }
-    }
-    
-    // Add topics with links to processed topics
-    for (const topicData of topicMap.values()) {
-      // Only add topics with links
-      if (topicData.links.length > 0) {
-        processedTopics.push(topicData);
-      }
-    }
-    
-    // If some topics have no links, try to process the text manually
-    if (processedTopics.length < topicsFormatted.length) {
-      const sections = fullText.split(/\*\*\d+\.\s|\n\n\*\*|\n\*\*/); // Split by section headers
       
-      for (const section of sections) {
-        if (!section.trim()) continue;
-        
-        // Try to find a topic match for this section
-        for (const [topicKey, topicData] of topicMap.entries()) {
-          // Skip if this topic already has links
-          if (topicData.links.length > 0) continue;
+      // End the last section
+      if (inSection && currentTopic) {
+        topicSections[currentTopic.toLowerCase()] = {
+          startIndex: sectionStart,
+          endIndex: fullText.length
+        };
+      }
+      
+      // If no sections found, try another approach with topic keywords
+      if (Object.keys(topicSections).length === 0) {
+        for (const topic of topicsFormatted) {
+          const topicKeyword = topic.topic.toLowerCase().replace(/,$/, '').trim();
+          const index = fullText.toLowerCase().indexOf(topicKeyword);
           
-          if (section.toLowerCase().includes(topicKey)) {
-            // Look for URL patterns in text
-            const urlRegex = /https?:\/\/[^\s)]+/g;
-            const foundUrls = section.match(urlRegex);
+          if (index !== -1) {
+            const nextTopicIndex = findNextTopicIndex(fullText, index + topicKeyword.length, topicsFormatted);
             
-            if (foundUrls && foundUrls.length > 0) {
-              for (const url of foundUrls) {
-                // Create a title from the URL
-                let title = '';
-                try {
-                  const urlObj = new URL(url);
-                  title = urlObj.hostname.replace('www.', '');
-                } catch (e) {
-                  title = 'Link';
+            topicSections[topicKeyword] = {
+              startIndex: index,
+              endIndex: nextTopicIndex !== -1 ? nextTopicIndex : fullText.length
+            };
+          }
+        }
+      }
+      
+      // Process annotations and assign to topics
+      for (const annotation of annotations) {
+        if (annotation.type === 'url_citation' && annotation.url) {
+          // Extract annotation information
+          const url = annotation.url;
+          const title = annotation.title || extractTitleFromUrl(url);
+          
+          // Find which topic this annotation belongs to
+          let foundTopic = null;
+          
+          // Try to match annotation with a topic section
+          for (const [topicKey, section] of Object.entries(topicSections)) {
+            if (annotation.start_index >= section.startIndex && annotation.start_index < section.endIndex) {
+              // Find the matching topic in our map
+              for (const [mapKey, topicData] of topicMap.entries()) {
+                if (mapKey.includes(topicKey) || topicKey.includes(mapKey)) {
+                  foundTopic = topicData;
+                  break;
                 }
-                
-                // Add link to this topic
-                topicData.links.push({
-                  url,
-                  title,
-                  description: section.substring(0, 200) + (section.length > 200 ? '...' : '')
-                });
               }
               
-              // Add to processed topics if links were found
-              if (topicData.links.length > 0 && !processedTopics.includes(topicData)) {
+              if (foundTopic) break;
+            }
+          }
+          
+          // If no topic found by position, try to match by surrounding text
+          if (!foundTopic) {
+            const surroundingTextStart = Math.max(0, annotation.start_index - 200);
+            const surroundingTextEnd = Math.min(fullText.length, annotation.end_index + 200);
+            const surroundingText = fullText.substring(surroundingTextStart, surroundingTextEnd).toLowerCase();
+            
+            for (const [topicKey, topicData] of topicMap.entries()) {
+              if (surroundingText.includes(topicKey.toLowerCase())) {
+                foundTopic = topicData;
+                break;
+              }
+            }
+          }
+          
+          // If still no topic found, assign to the first topic as fallback
+          if (!foundTopic && topicMap.size > 0) {
+            foundTopic = topicMap.values().next().value;
+          }
+          
+          // Extract description from surrounding text
+          const surroundingTextStart = Math.max(0, annotation.start_index - 150);
+          const surroundingTextEnd = Math.min(fullText.length, annotation.end_index + 150);
+          let description = fullText.substring(surroundingTextStart, surroundingTextEnd).trim();
+          
+          // Shorten description if too long
+          if (description.length > 200) {
+            description = description.substring(0, 197) + '...';
+          }
+          
+          // Add link to the found topic
+          if (foundTopic) {
+            foundTopic.links.push({
+              url,
+              title,
+              description
+            });
+          }
+        }
+      }
+      
+      // Collect topics with links
+      for (const topicData of topicMap.values()) {
+        if (topicData.links.length > 0) {
+          processedTopics.push(topicData);
+        }
+      }
+    }
+    
+    // If no links found through annotations, try to extract from full text
+    if (processedTopics.length === 0) {
+      // Simple URL extraction using regex
+      const urlRegex = /https?:\/\/[^\s)]+/g;
+      const foundUrls = fullText.match(urlRegex) || [];
+      
+      if (foundUrls.length > 0) {
+        // Try to assign URLs to topics based on proximity
+        for (const url of foundUrls) {
+          const urlIndex = fullText.indexOf(url);
+          let closestTopic = '';
+          let minDistance = Number.MAX_SAFE_INTEGER;
+          
+          // Find the closest topic mention to this URL
+          for (const topic of topicsFormatted) {
+            const topicKeyword = topic.topic.toLowerCase().replace(/,$/, '').trim();
+            const topicIndex = fullText.toLowerCase().indexOf(topicKeyword);
+            
+            if (topicIndex !== -1) {
+              const distance = Math.abs(urlIndex - topicIndex);
+              if (distance < minDistance) {
+                minDistance = distance;
+                closestTopic = topic.topic.replace(/,$/, '').trim();
+              }
+            }
+          }
+          
+          // If we found a topic, add the link
+          if (closestTopic) {
+            const topicData = [...topicMap.values()].find(t => 
+              t.topic.toLowerCase() === closestTopic.toLowerCase()
+            );
+            
+            if (topicData) {
+              topicData.links.push({
+                url,
+                title: extractTitleFromUrl(url),
+                description: `Link found for topic: ${closestTopic}`
+              });
+              
+              // Add to processed topics if not already there
+              if (!processedTopics.includes(topicData)) {
                 processedTopics.push(topicData);
               }
             }
@@ -249,6 +283,33 @@ export const findLinksWithOpenAI = async (
     return { processedTopics: [], usedMockData: false };
   }
 };
+
+// Helper function to find the index of the next topic in the text
+function findNextTopicIndex(text: string, startIndex: number, topics: any[]): number {
+  let minIndex = -1;
+  
+  for (const topic of topics) {
+    const topicKeyword = topic.topic.toLowerCase().replace(/,$/, '').trim();
+    const index = text.toLowerCase().indexOf(topicKeyword, startIndex);
+    
+    if (index !== -1 && (minIndex === -1 || index < minIndex)) {
+      minIndex = index;
+    }
+  }
+  
+  return minIndex;
+}
+
+// Helper function to extract a title from a URL
+function extractTitleFromUrl(url: string): string {
+  try {
+    const urlObj = new URL(url);
+    // Remove www. prefix and extract domain
+    return urlObj.hostname.replace(/^www\./, '');
+  } catch (e) {
+    return 'Link';
+  }
+}
 
 // Export an empty function to satisfy imports
 export const processAPIResponse = () => {};
