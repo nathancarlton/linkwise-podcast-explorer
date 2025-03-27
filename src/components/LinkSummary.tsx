@@ -28,12 +28,14 @@ const LinkSummary: React.FC<LinkSummaryProps> = ({ links }) => {
     
     checkedLinks.forEach(link => {
       lines.push(`## ${link.topic}`);
-      if (link.context) {
-        lines.push(`*${link.context}*`);
-        lines.push('');
-      }
+      // Context is now hidden
+      //if (link.context) {
+      //  lines.push(`*${link.context}*`);
+      //  lines.push('');
+      //}
       lines.push(`[${link.title}](${link.url})`);
-      lines.push(`${link.description}`);
+      // Description is now hidden
+      //lines.push(`${link.description}`);
       lines.push('');
     });
     
@@ -48,12 +50,14 @@ const LinkSummary: React.FC<LinkSummaryProps> = ({ links }) => {
     
     checkedLinks.forEach(link => {
       lines.push(`${link.topic}:`);
-      if (link.context) {
-        lines.push(`  Context: ${link.context}`);
-      }
+      // Context is now hidden
+      //if (link.context) {
+      //  lines.push(`  Context: ${link.context}`);
+      //}
       lines.push(`  ${link.title}`);
       lines.push(`  ${link.url}`);
-      lines.push(`  ${link.description}`);
+      // Description is now hidden
+      //lines.push(`  ${link.description}`);
       lines.push('');
     });
     
@@ -69,11 +73,13 @@ const LinkSummary: React.FC<LinkSummaryProps> = ({ links }) => {
     checkedLinks.forEach(link => {
       lines.push(`  <li>`);
       lines.push(`    <strong>${link.topic}</strong>`);
-      if (link.context) {
-        lines.push(`    <p><em>${link.context}</em></p>`);
-      }
+      // Context is now hidden
+      //if (link.context) {
+      //  lines.push(`    <p><em>${link.context}</em></p>`);
+      //}
       lines.push(`    <a href="${link.url}" target="_blank">${link.title}</a>`);
-      lines.push(`    <p>${link.description}</p>`);
+      // Description is now hidden
+      //lines.push(`    <p>${link.description}</p>`);
       lines.push(`  </li>`);
     });
     
@@ -89,15 +95,19 @@ const LinkSummary: React.FC<LinkSummaryProps> = ({ links }) => {
         {checkedLinks.map((link, index) => (
           <div key={index} className="mb-6">
             <h2>{link.topic}</h2>
+            {/* Context is now hidden 
             {link.context && (
               <p className="italic text-muted-foreground">{link.context}</p>
             )}
+            */}
             <p>
               <a href={link.url} target="_blank" rel="noreferrer" className="font-medium underline">
                 {link.title}
               </a>
             </p>
+            {/* Description is now hidden 
             <p>{link.description}</p>
+            */}
           </div>
         ))}
       </div>

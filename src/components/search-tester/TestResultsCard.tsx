@@ -43,11 +43,13 @@ export const TestResultsCard: React.FC<TestResultsCardProps> = ({ results }) => 
               {results.links.map((link, i) => (
                 <div key={i} className="p-3 bg-muted rounded">
                   <div className="font-medium">{link.topic}</div>
+                  {/* Context is now hidden 
                   {link.context && (
                     <div className="text-sm text-muted-foreground italic mb-1">
                       {link.context}
                     </div>
                   )}
+                  */}
                   <div className="mt-1">
                     <a 
                       href={link.url} 
@@ -58,9 +60,11 @@ export const TestResultsCard: React.FC<TestResultsCardProps> = ({ results }) => 
                       {link.title} <ExternalLink className="h-3 w-3" />
                     </a>
                     <div className="text-sm mt-1 break-all text-muted-foreground">{link.url}</div>
+                    {/* Description is now hidden 
                     <div className="text-sm text-muted-foreground mt-1">
                       {link.description}
                     </div>
+                    */}
                   </div>
                 </div>
               ))}

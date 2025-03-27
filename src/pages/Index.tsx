@@ -6,6 +6,8 @@ import LinksList from '@/components/LinksList';
 import LinkSummary from '@/components/LinkSummary';
 import TopicList from '@/components/TopicList';
 import ApiKeyInput from '@/components/ApiKeyInput';
+import TopicAvoidList from '@/components/TopicAvoidList';
+import TopicAddList from '@/components/TopicAddList';
 import { Separator } from '@/components/ui/separator';
 import { 
   processTranscript, 
@@ -23,6 +25,14 @@ const Index = () => {
   const [apiKey, setApiKey] = useState<string>('');
   const [transcriptHash, setTranscriptHash] = useState<string>('');
   
+  // Topics to avoid state
+  const [topicsToAvoid, setTopicsToAvoid] = useState<string[]>([]);
+  const [newTopicToAvoid, setNewTopicToAvoid] = useState<string>('');
+  
+  // Topics to add state
+  const [topicsToAdd, setTopicsToAdd] = useState<string[]>([]);
+  const [newTopicToAdd, setNewTopicToAdd] = useState<string>('');
+  
   const handleApiKeySave = (key: string) => {
     setApiKey(key);
   };
@@ -39,11 +49,42 @@ const Index = () => {
     return hash.toString();
   };
 
+  const handleAddTopicToAvoid = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (newTopicToAvoid.trim() && topicsToAvoid.length < 10) {
+      if (!topicsToAvoid.includes(newTopicToAvoid.trim())) {
+        setTopicsToAvoid([...topicsToAvoid, newTopicToAvoid.trim()]);
+        setNewTopicToAvoid('');
+      } else {
+        toast.error('This topic is already in the list');
+      }
+    }
+  };
+
+  const handleRemoveTopicToAvoid = (topic: string) => {
+    setTopicsToAvoid(topicsToAvoid.filter(t => t !== topic));
+  };
+
+  const handleAddTopicToAdd = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (newTopicToAdd.trim() && topicsToAdd.length < 10) {
+      if (!topicsToAdd.includes(newTopicToAdd.trim())) {
+        setTopicsToAdd([...topicsToAdd, newTopicToAdd.trim()]);
+        setNewTopicToAdd('');
+      } else {
+        toast.error('This topic is already in the list');
+      }
+    }
+  };
+
+  const handleRemoveTopicToAdd = (topic: string) => {
+    setTopicsToAdd(topicsToAdd.filter(t => t !== topic));
+  };
+
   const handleProcessTranscript = async (
     transcript: string, 
     topicCount: number, 
-    domainsToAvoid: string[],
-    topicsToAvoid: string[]
+    domainsToAvoid: string[]
   ) => {
     try {
       // Check if this is a new transcript
@@ -74,8 +115,20 @@ const Index = () => {
       
       console.log('Successfully extracted topics:', extractedTopics);
       
+      // Add manually entered topics
+      const allTopics = [...extractedTopics];
+      
+      if (topicsToAdd.length > 0) {
+        topicsToAdd.forEach(topic => {
+          // Check if the topic already exists
+          if (!allTopics.some(t => t.topic.toLowerCase() === topic.toLowerCase())) {
+            allTopics.push({ topic, context: 'Manually added' });
+          }
+        });
+      }
+      
       // Convert extracted topics to topic items
-      const topicItems: TopicItem[] = extractedTopics.map(topic => ({
+      const topicItems: TopicItem[] = allTopics.map(topic => ({
         topic: topic.topic,
         context: topic.context,
         checked: true
@@ -86,7 +139,7 @@ const Index = () => {
       // Find links for the extracted topics
       setProcessingStage(ProcessingStage.FindingLinks);
       const { processedTopics } = await findLinksForTopics(
-        extractedTopics, 
+        allTopics, 
         apiKey,
         domainsToAvoid
       );
@@ -222,8 +275,30 @@ const Index = () => {
       <main className="w-full max-w-4xl">
         <ApiKeyInput onApiKeySave={handleApiKeySave} />
         
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+          <TopicAvoidList
+            topics={topicsToAvoid}
+            onRemove={handleRemoveTopicToAvoid}
+            newTopic={newTopicToAvoid}
+            setNewTopic={setNewTopicToAvoid}
+            onAdd={handleAddTopicToAvoid}
+            disabled={processingStage === ProcessingStage.ProcessingTranscript || 
+                     processingStage === ProcessingStage.FindingLinks}
+          />
+          
+          <TopicAddList
+            topics={topicsToAdd}
+            onRemove={handleRemoveTopicToAdd}
+            newTopic={newTopicToAdd}
+            setNewTopic={setNewTopicToAdd}
+            onAdd={handleAddTopicToAdd}
+            disabled={processingStage === ProcessingStage.ProcessingTranscript || 
+                     processingStage === ProcessingStage.FindingLinks}
+          />
+        </div>
+        
         <TranscriptInput 
-          onProcess={handleProcessTranscript}
+          onProcess={(transcript, topicCount, domainsToAvoid) => handleProcessTranscript(transcript, topicCount, domainsToAvoid)}
           processingStage={processingStage}
           hasApiKey={hasValidApiKey}
         />

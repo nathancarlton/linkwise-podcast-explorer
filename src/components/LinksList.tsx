@@ -114,11 +114,13 @@ const LinksList: React.FC<LinksListProps> = ({ links, onLinkToggle }) => {
                           >
                             {link.title}
                           </label>
+                          {/* Context is now hidden 
                           {link.context && (
                             <p className="text-sm text-muted-foreground italic mt-1">
                               {link.context}
                             </p>
                           )}
+                          */}
                           <div className="mt-1">
                             <a 
                               href={link.url} 
@@ -129,9 +131,11 @@ const LinksList: React.FC<LinksListProps> = ({ links, onLinkToggle }) => {
                               <span className={`truncate ${isMobile ? 'max-w-[200px]' : 'max-w-[300px]'}`}>{link.url}</span>
                               <ExternalLink className="ml-1 h-3 w-3 opacity-70 group-hover:opacity-100 transition-opacity flex-shrink-0" />
                             </a>
+                            {/* Description is now hidden 
                             <p className="text-sm text-muted-foreground mt-1 break-words">
                               {link.description}
                             </p>
+                            */}
                           </div>
                         </div>
                       </div>
