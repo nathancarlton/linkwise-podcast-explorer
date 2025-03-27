@@ -24,7 +24,7 @@ export const findLinksForTopics = async (
   }
   
   try {
-    // Use OpenAI to find links for topics
+    // Use OpenAI to find links for topics without validation
     return await findLinksWithOpenAI(topics, apiKey, domainsToAvoid);
   } catch (error) {
     console.error('Error finding links:', error);
