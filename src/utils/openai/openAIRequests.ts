@@ -31,7 +31,7 @@ export const makeInitialRequest = async (
       headers: getOpenAIHeaders(apiKey),
       body: JSON.stringify({
         model: 'gpt-4o-mini',
-        tools: [{ type: "web_search" }],
+        tools: [{ type: "web_search_preview" }],
         input: prompt,
         instructions: systemPrompt
       })

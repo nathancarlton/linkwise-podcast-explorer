@@ -47,94 +47,91 @@ export const findLinksWithOpenAI = async (
       return { processedTopics: [], usedMockData: false };
     }
     
-    // Extract links from the content
+    // Process the response and extract links
     const processedTopics: ProcessedTopic[] = [];
     
-    // Process each topic from our input
-    for (const topic of topicsFormatted) {
-      const topicName = topic.topic;
-      const links = [];
-      
-      // Look for URLs in the response output
-      for (const output of data.output) {
-        if (output.type === 'message' && output.content && Array.isArray(output.content)) {
-          // Process each content item
-          for (const contentItem of output.content) {
-            if (contentItem.type === 'text' && contentItem.text) {
-              // Extract URLs with regex
-              const urlRegex = /(https?:\/\/[^\s)">]+)/g;
-              const urls = contentItem.text.match(urlRegex) || [];
-              
-              for (const url of urls) {
-                // Extract title and description from nearby text
-                let title = '';
-                let description = '';
+    // Map topics to their processed results
+    const topicMap = new Map();
+    topicsFormatted.forEach(t => {
+      topicMap.set(t.topic.toLowerCase(), {
+        topic: t.topic,
+        context: t.context || '',
+        links: []
+      });
+    });
+    
+    // Find message outputs in the response
+    for (const output of data.output) {
+      if (output.type === 'message' && output.content && Array.isArray(output.content)) {
+        for (const contentItem of output.content) {
+          // Check for annotations which contain the URLs
+          if (contentItem.annotations && Array.isArray(contentItem.annotations)) {
+            console.log('Found annotations:', contentItem.annotations);
+            
+            // Extract the full text for context
+            const fullText = contentItem.text || '';
+            
+            // Process each annotation (URL)
+            for (const annotation of contentItem.annotations) {
+              if (annotation.type === 'url_citation' && annotation.url) {
+                const url = annotation.url;
+                let title = annotation.title || '';
                 
-                // Use surrounding text for context
-                const textParts = contentItem.text.split(url);
-                const beforeUrl = textParts[0] || '';
-                const afterUrl = textParts[1] || '';
-                
-                // Try to find a title from text before URL
-                const titleRegex = /\*\*([^*]+)\*\*|"([^"]+)"|'([^']+)'|([A-Z][a-z]+ [A-Z][a-z]+)/;
-                const titleMatch = beforeUrl.match(titleRegex);
-                
-                if (titleMatch) {
-                  // Use the first non-undefined match group
-                  title = titleMatch.slice(1).find(m => m !== undefined) || '';
-                }
-                
-                // If no title found, try to extract from URL
+                // If no title, try to extract from URL
                 if (!title) {
                   try {
                     const urlObj = new URL(url);
-                    const pathSegments = urlObj.pathname.split('/').filter(s => s);
-                    if (pathSegments.length > 0) {
-                      // Use last path segment
-                      title = pathSegments[pathSegments.length - 1]
-                        .replace(/-/g, ' ')
-                        .replace(/\.(html|php|asp|jsp)$/, '')
-                        .split(' ')
-                        .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-                        .join(' ');
-                    } else {
-                      // Use hostname
-                      title = urlObj.hostname.replace('www.', '');
-                    }
+                    title = urlObj.hostname.replace('www.', '');
                   } catch (e) {
-                    title = topicName;
+                    title = 'Link';
                   }
                 }
                 
-                // Extract description from text after URL
-                const descRegex = /[^.!?]+[.!?]/;
-                const descMatch = afterUrl.match(descRegex);
+                // Extract description from surrounding text
+                const startIndex = Math.max(0, annotation.start_index - 100);
+                const endIndex = Math.min(fullText.length, annotation.end_index + 100);
+                let description = fullText.substring(startIndex, endIndex).trim();
                 
-                if (descMatch) {
-                  description = descMatch[0].trim();
-                } else {
-                  // Use generic description
-                  description = `Information about ${topicName}`;
+                // Shorten description if too long
+                if (description.length > 200) {
+                  description = description.substring(0, 197) + '...';
                 }
                 
-                links.push({
-                  url,
-                  title: title || `Link about ${topicName}`,
-                  description: description
-                });
+                // Find which topic this link belongs to
+                let matchedTopic = null;
+                
+                // First, try to find explicit topic mentions near the link
+                for (const [topicKey, topicData] of topicMap.entries()) {
+                  if (fullText.toLowerCase().includes(topicKey)) {
+                    matchedTopic = topicData;
+                    break;
+                  }
+                }
+                
+                // If no topic found, assign to the first topic (for single topic searches)
+                if (!matchedTopic && topicMap.size > 0) {
+                  matchedTopic = topicMap.values().next().value;
+                }
+                
+                // Add the link to the matched topic
+                if (matchedTopic) {
+                  matchedTopic.links.push({
+                    url,
+                    title,
+                    description
+                  });
+                }
               }
             }
           }
         }
       }
-      
-      // Add topic with links to processed topics
-      if (links.length > 0) {
-        processedTopics.push({
-          topic: topicName,
-          context: topic.context || '',
-          links
-        });
+    }
+    
+    // Add topics with links to processed topics
+    for (const topicData of topicMap.values()) {
+      if (topicData.links.length > 0) {
+        processedTopics.push(topicData);
       }
     }
     

@@ -3,6 +3,7 @@ import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { LinkItem } from '@/types';
+import { ExternalLink } from 'lucide-react';
 
 interface TestResultsCardProps {
   results: {
@@ -52,11 +53,11 @@ export const TestResultsCard: React.FC<TestResultsCardProps> = ({ results }) => 
                       href={link.url} 
                       target="_blank" 
                       rel="noopener noreferrer" 
-                      className="text-blue-500 hover:text-blue-700 break-all"
+                      className="text-blue-500 hover:text-blue-700 break-all flex items-center gap-1"
                     >
-                      {link.title}
+                      {link.title} <ExternalLink className="h-3 w-3" />
                     </a>
-                    <div className="text-sm mt-1">{link.url}</div>
+                    <div className="text-sm mt-1 break-all text-muted-foreground">{link.url}</div>
                     <div className="text-sm text-muted-foreground mt-1">
                       {link.description}
                     </div>
@@ -69,4 +70,4 @@ export const TestResultsCard: React.FC<TestResultsCardProps> = ({ results }) => 
       </CardContent>
     </Card>
   );
-};
+}
