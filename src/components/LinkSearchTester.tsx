@@ -22,11 +22,10 @@ const LinkSearchTester: React.FC<LinkSearchTesterProps> = ({ apiKey }) => {
   const [results, setResults] = useState<{
     links: LinkItem[];
     processedTopics?: string[];
-    usedMockData?: boolean;
   } | null>(null);
 
   const handleTopicsTest = async () => {
-    if (!topics.trim()) return;
+    if (!topics.trim() || !apiKey) return;
     
     try {
       setLoading(true);
@@ -37,13 +36,14 @@ const LinkSearchTester: React.FC<LinkSearchTesterProps> = ({ apiKey }) => {
       setResults({ links });
     } catch (error) {
       console.error('Error testing topics:', error);
+      setResults({ links: [] });
     } finally {
       setLoading(false);
     }
   };
 
   const handleTranscriptTest = async () => {
-    if (!transcript.trim()) return;
+    if (!transcript.trim() || !apiKey) return;
     
     try {
       setLoading(true);
@@ -52,15 +52,18 @@ const LinkSearchTester: React.FC<LinkSearchTesterProps> = ({ apiKey }) => {
       const result = await testFullProcess(transcript, apiKey);
       setResults({
         links: result.links,
-        processedTopics: result.topics,
-        usedMockData: result.usedMockData
+        processedTopics: result.topics
       });
     } catch (error) {
       console.error('Error testing transcript:', error);
+      setResults({ links: [] });
     } finally {
       setLoading(false);
     }
   };
+
+  // Determine if we should show the API key warning
+  const showApiKeyWarning = !apiKey || apiKey.trim() === '';
 
   return (
     <div className="w-full space-y-6">
@@ -69,6 +72,12 @@ const LinkSearchTester: React.FC<LinkSearchTesterProps> = ({ apiKey }) => {
           <CardTitle>Link Search Tester</CardTitle>
         </CardHeader>
         <CardContent>
+          {showApiKeyWarning && (
+            <div className="mb-4 p-3 bg-yellow-100 dark:bg-yellow-900 rounded-md text-sm">
+              ⚠️ An OpenAI API key is required to test link search functionality. Please add your API key in the Settings.
+            </div>
+          )}
+          
           <Tabs value={activeTab} onValueChange={setActiveTab}>
             <TabsList className="mb-4">
               <TabsTrigger value="topics">Test with Topics</TabsTrigger>
@@ -113,7 +122,7 @@ McKinsey Research on AI"
         <CardFooter>
           <Button 
             onClick={activeTab === 'topics' ? handleTopicsTest : handleTranscriptTest}
-            disabled={loading || (activeTab === 'topics' ? !topics.trim() : !transcript.trim())}
+            disabled={loading || (activeTab === 'topics' ? !topics.trim() : !transcript.trim()) || !apiKey}
             className="w-full"
           >
             {loading ? (
@@ -138,26 +147,20 @@ McKinsey Research on AI"
               <div className="mb-4">
                 <h3 className="font-medium mb-2">Extracted Topics:</h3>
                 <div className="bg-muted p-3 rounded text-sm">
-                  {results.processedTopics.map((topic, i) => (
-                    <div key={i} className="mb-1">{topic}</div>
-                  ))}
+                  {results.processedTopics.length > 0 ? (
+                    results.processedTopics.map((topic, i) => (
+                      <div key={i} className="mb-1">{topic}</div>
+                    ))
+                  ) : (
+                    <p className="text-muted-foreground italic">No topics were extracted.</p>
+                  )}
                 </div>
-              </div>
-            )}
-            
-            {results.usedMockData !== undefined && (
-              <div className="mb-4 p-2 rounded bg-yellow-100 dark:bg-yellow-900">
-                <p className="text-sm">
-                  {results.usedMockData 
-                    ? "⚠️ Used mock data instead of real API results" 
-                    : "✅ Used real API results"}
-                </p>
               </div>
             )}
             
             <h3 className="font-medium mb-2">Found Links ({results.links.length}):</h3>
             {results.links.length === 0 ? (
-              <p className="text-muted-foreground italic">No links found.</p>
+              <p className="text-muted-foreground italic">No links found. Ensure you have provided a valid OpenAI API key with appropriate permissions.</p>
             ) : (
               <ScrollArea className="h-[300px]">
                 <div className="space-y-4">

@@ -8,22 +8,24 @@ import { LinkItem, ProcessedTopic } from '../types';
  * 
  * @param topics - Array of topics to search links for
  * @param apiKey - OpenAI API key
- * @param forceBypassCache - Flag to bypass cache (true by default)
  * @returns Promise resolving to an array of LinkItem objects
  */
 export const testLinkSearch = async (
   topics: string[],
-  apiKey?: string,
-  forceBypassCache: boolean = true
+  apiKey?: string
 ): Promise<LinkItem[]> => {
   console.log('Testing link search for topics:', topics);
   
   try {
+    if (!apiKey) {
+      console.error('No API key provided for testing');
+      return [];
+    }
+
     // Call findLinksForTopics directly with the provided topics
-    const { processedTopics, usedMockData } = await findLinksForTopics(topics, apiKey);
+    const { processedTopics } = await findLinksForTopics(topics, apiKey);
     
     console.log('Found processed topics:', processedTopics);
-    console.log('Used mock data:', usedMockData);
     
     // Convert ProcessedTopic[] to LinkItem[] for easier viewing
     const links: LinkItem[] = [];
@@ -57,32 +59,37 @@ export const testLinkSearch = async (
  * 
  * @param transcript - Transcript text to process
  * @param apiKey - OpenAI API key
- * @param forceBypassCache - Flag to bypass cache (true by default)
  * @returns Promise resolving to an array of LinkItem objects
  */
 export const testFullProcess = async (
   transcript: string,
-  apiKey?: string,
-  forceBypassCache: boolean = true
+  apiKey?: string
 ): Promise<{
   topics: string[],
-  links: LinkItem[],
-  usedMockData: boolean
+  links: LinkItem[]
 }> => {
   console.log('Testing full process with transcript length:', transcript.length);
   
   try {
+    if (!apiKey) {
+      console.error('No API key provided for testing');
+      return { topics: [], links: [] };
+    }
+
     // First extract topics from the transcript
-    const { topics, usedMockData: usedMockForTopics } = await processTranscript(transcript, apiKey);
+    const { topics } = await processTranscript(transcript, apiKey);
     
     console.log('Extracted topics:', topics);
-    console.log('Used mock data for topics:', usedMockForTopics);
+    
+    if (topics.length === 0) {
+      console.warn('No topics were extracted from the transcript');
+      return { topics: [], links: [] };
+    }
     
     // Then find links for those topics
-    const { processedTopics, usedMockData: usedMockForLinks } = await findLinksForTopics(topics, apiKey);
+    const { processedTopics } = await findLinksForTopics(topics, apiKey);
     
     console.log('Found processed topics:', processedTopics);
-    console.log('Used mock data for links:', usedMockForLinks);
     
     // Convert ProcessedTopic[] to LinkItem[] for easier viewing
     const links: LinkItem[] = [];
@@ -108,15 +115,13 @@ export const testFullProcess = async (
     // Return all the data for inspection
     return {
       topics,
-      links,
-      usedMockData: usedMockForTopics || usedMockForLinks
+      links
     };
   } catch (error) {
     console.error('Error in full process test:', error);
     return {
       topics: [],
-      links: [],
-      usedMockData: true
+      links: []
     };
   }
 };
