@@ -4,9 +4,12 @@
 
 import { processTranscript, findLinksForTopics } from './transcriptAPI';
 import { parseUserProvidedLinks } from './linkParser';
+import { testLinkSearch, testFullProcess } from './testLinkSearch';
 
 export {
   processTranscript,
   findLinksForTopics,
-  parseUserProvidedLinks
+  parseUserProvidedLinks,
+  testLinkSearch,
+  testFullProcess
 };
