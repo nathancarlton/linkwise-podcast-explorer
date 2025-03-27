@@ -8,8 +8,6 @@ import LinksList from '@/components/LinksList';
 import LinkSummary from '@/components/LinkSummary';
 import TopicList from '@/components/TopicList';
 import ApiKeyInput from '@/components/ApiKeyInput';
-import TopicAvoidList from '@/components/TopicAvoidList';
-import TopicAddList from '@/components/TopicAddList';
 
 import { useApiKey } from '@/hooks/useApiKey';
 import { useTopicsManager } from '@/hooks/useTopicsManager';
@@ -63,33 +61,21 @@ const Index = () => {
       <main className="w-full max-w-4xl">
         <ApiKeyInput onApiKeySave={handleApiKeySave} />
         
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
-          <TopicAvoidList
-            topics={topicsToAvoid}
-            onRemove={handleRemoveTopicToAvoid}
-            newTopic={newTopicToAvoid}
-            setNewTopic={setNewTopicToAvoid}
-            onAdd={handleAddTopicToAvoid}
-            disabled={processingStage === ProcessingStage.ProcessingTranscript || 
-                    processingStage === ProcessingStage.FindingLinks}
-          />
-          
-          <TopicAddList
-            topics={topicsToAdd}
-            onRemove={handleRemoveTopicToAdd}
-            newTopic={newTopicToAdd}
-            setNewTopic={setNewTopicToAdd}
-            onAdd={handleAddTopicToAdd}
-            disabled={processingStage === ProcessingStage.ProcessingTranscript || 
-                    processingStage === ProcessingStage.FindingLinks}
-          />
-        </div>
-        
         <TranscriptInput 
-          onProcess={(transcript, topicCount, domainsToAvoid) => 
+          onProcess={(transcript, topicCount, domainsToAvoid, topicsToAvoid, topicsToAdd) => 
             handleProcessTranscript(transcript, topicCount, domainsToAvoid, topicsToAvoid, topicsToAdd)}
           processingStage={processingStage}
           hasApiKey={hasValidApiKey}
+          topicsToAvoid={topicsToAvoid}
+          onAddTopicToAvoid={handleAddTopicToAvoid}
+          onRemoveTopicToAvoid={handleRemoveTopicToAvoid}
+          newTopicToAvoid={newTopicToAvoid}
+          setNewTopicToAvoid={setNewTopicToAvoid}
+          topicsToAdd={topicsToAdd}
+          onAddTopicToAdd={handleAddTopicToAdd}
+          onRemoveTopicToAdd={handleRemoveTopicToAdd}
+          newTopicToAdd={newTopicToAdd}
+          setNewTopicToAdd={setNewTopicToAdd}
         />
         
         {topics.length > 0 && (

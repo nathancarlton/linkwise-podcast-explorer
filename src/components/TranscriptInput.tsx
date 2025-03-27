@@ -7,19 +7,41 @@ import { Input } from '@/components/ui/input';
 import { ProcessingStage } from '@/types';
 import { Loader2, X, Plus, AlertTriangle } from 'lucide-react';
 import DomainAvoidList from './DomainAvoidList';
+import TopicAvoidList from './TopicAvoidList';
+import TopicAddList from './TopicAddList';
 import { Slider } from '@/components/ui/slider';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 
 interface TranscriptInputProps {
-  onProcess: (transcript: string, topicCount: number, domainsToAvoid: string[]) => void;
+  onProcess: (transcript: string, topicCount: number, domainsToAvoid: string[], topicsToAvoid: string[], topicsToAdd: string[]) => void;
   processingStage: ProcessingStage;
   hasApiKey?: boolean;
+  topicsToAvoid: string[];
+  onAddTopicToAvoid: (e: React.FormEvent) => void;
+  onRemoveTopicToAvoid: (topic: string) => void;
+  newTopicToAvoid: string;
+  setNewTopicToAvoid: (topic: string) => void;
+  topicsToAdd: string[];
+  onAddTopicToAdd: (e: React.FormEvent) => void;
+  onRemoveTopicToAdd: (topic: string) => void;
+  newTopicToAdd: string;
+  setNewTopicToAdd: (topic: string) => void;
 }
 
 const TranscriptInput: React.FC<TranscriptInputProps> = ({ 
   onProcess, 
   processingStage,
-  hasApiKey = false
+  hasApiKey = false,
+  topicsToAvoid,
+  onAddTopicToAvoid,
+  onRemoveTopicToAvoid,
+  newTopicToAvoid,
+  setNewTopicToAvoid,
+  topicsToAdd,
+  onAddTopicToAdd,
+  onRemoveTopicToAdd,
+  newTopicToAdd,
+  setNewTopicToAdd
 }) => {
   const [transcript, setTranscript] = useState('');
   const [wordCount, setWordCount] = useState(0);
@@ -36,7 +58,7 @@ const TranscriptInput: React.FC<TranscriptInputProps> = ({
 
   const handleProcess = () => {
     if (transcript.trim().length > 0) {
-      onProcess(transcript, topicCount, domainsToAvoid);
+      onProcess(transcript, topicCount, domainsToAvoid, topicsToAvoid, topicsToAdd);
     }
   };
   
@@ -123,6 +145,24 @@ const TranscriptInput: React.FC<TranscriptInputProps> = ({
             newDomain={newDomain}
             setNewDomain={setNewDomain}
             onAdd={handleDomainAdd}
+            disabled={isDisabled}
+          />
+          
+          <TopicAvoidList 
+            topics={topicsToAvoid}
+            onRemove={onRemoveTopicToAvoid}
+            newTopic={newTopicToAvoid}
+            setNewTopic={setNewTopicToAvoid}
+            onAdd={onAddTopicToAvoid}
+            disabled={isDisabled}
+          />
+          
+          <TopicAddList 
+            topics={topicsToAdd}
+            onRemove={onRemoveTopicToAdd}
+            newTopic={newTopicToAdd}
+            setNewTopic={setNewTopicToAdd}
+            onAdd={onAddTopicToAdd}
             disabled={isDisabled}
           />
         </div>
