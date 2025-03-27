@@ -31,9 +31,13 @@ export const makeInitialRequest = async (
       headers: getOpenAIHeaders(apiKey),
       body: JSON.stringify({
         model: 'gpt-4o-mini',
-        tools: [{ type: "web_search_preview" }],
+        tools: [{ 
+          type: "web_search_preview",
+          search_context_size: "large" // Request more content for better topic extraction
+        }],
         input: prompt,
-        instructions: systemPrompt
+        instructions: systemPrompt,
+        max_output_tokens: 1000 // Request more tokens to ensure space for all topics
       })
     });
 
