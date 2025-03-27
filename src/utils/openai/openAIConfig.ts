@@ -15,7 +15,7 @@ export const buildSystemPrompt = (domainsToAvoid: string[] = []): string => {
     : '';
 
   return `Find high-quality links for the given topics. For each topic, provide at least 2-3 different links from varied sources. 
-  Each link should be directly relevant to its specific topic.
+  Each link should be directly relevant to its specific topic. Format each link with a clean, concise description that summarizes the main content of the page.
   ${domainsToAvoidStr}`;
 };
 

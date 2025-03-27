@@ -60,8 +60,8 @@ export const findLinksWithOpenAI = async (
       });
     });
     
-    // Used to track already used URLs to prevent duplicates
-    const usedUrls = new Map<string, string>(); // url -> topic it was used for
+    // Used to track already used URLs to prevent duplicates across all topics
+    const usedUrls = new Set<string>();
     
     // Find message output in the response
     let messageContent = null;
@@ -91,16 +91,15 @@ export const findLinksWithOpenAI = async (
     // If we have annotations, extract links for each topic
     if (annotations && annotations.length > 0) {
       // First, try to find topic sections in the text
-      let currentTopic = '';
       const topicSections: { [key: string]: { startIndex: number, endIndex: number } } = {};
       
       // Create a simple parser to identify topic sections
       const lines = fullText.split('\n');
-      let inSection = false;
+      let currentTopic = '';
       let sectionStart = 0;
       
       // Look for topic headers in the text using various patterns
-      const topicRegex = /\*\*(.*?):\*\*|\*\*\d+\.\s*(.*?)\*\*|^\d+\.\s*(.*?):|^\*\*(.*?)\*\*:/m;
+      const topicRegex = /\*\*(.*?):\*\*|\*\*\d+\.\s*(.*?)\*\*|^\d+\.\s*(.*?):|^\*\*(.*?)\*\*:|^([A-Za-z\s]+):/m;
       
       for (let i = 0; i < lines.length; i++) {
         const line = lines[i];
@@ -108,7 +107,7 @@ export const findLinksWithOpenAI = async (
         
         if (match) {
           // End previous section if any
-          if (inSection && currentTopic) {
+          if (currentTopic) {
             topicSections[currentTopic.toLowerCase()] = {
               startIndex: sectionStart,
               endIndex: fullText.indexOf(line, sectionStart)
@@ -116,9 +115,8 @@ export const findLinksWithOpenAI = async (
           }
           
           // Extract topic name (could be in different capture groups)
-          currentTopic = (match[1] || match[2] || match[3] || match[4]).trim();
+          currentTopic = (match[1] || match[2] || match[3] || match[4] || match[5]).trim();
           sectionStart = fullText.indexOf(line);
-          inSection = true;
           
           // Try to match with our topics
           for (const [topicKey, topicData] of topicMap.entries()) {
@@ -132,7 +130,7 @@ export const findLinksWithOpenAI = async (
       }
       
       // End the last section
-      if (inSection && currentTopic) {
+      if (currentTopic) {
         topicSections[currentTopic.toLowerCase()] = {
           startIndex: sectionStart,
           endIndex: fullText.length
@@ -162,7 +160,7 @@ export const findLinksWithOpenAI = async (
           // Extract annotation information
           const url = annotation.url;
           
-          // Skip duplicate URLs 
+          // Skip duplicate URLs across all topics
           if (usedUrls.has(url)) {
             continue;
           }
@@ -211,15 +209,13 @@ export const findLinksWithOpenAI = async (
           const surroundingTextEnd = Math.min(fullText.length, annotation.end_index + 150);
           let description = fullText.substring(surroundingTextStart, surroundingTextEnd).trim();
           
-          // Shorten description if too long
-          if (description.length > 200) {
-            description = description.substring(0, 197) + '...';
-          }
+          // Clean up the description to remove markdown and make it readable
+          description = cleanDescription(description, annotation.url);
           
           // Add link to the found topic
           if (foundTopic) {
-            // Mark this URL as used for this topic
-            usedUrls.set(url, foundTopic.topic);
+            // Mark this URL as used
+            usedUrls.add(url);
             
             foundTopic.links.push({
               url,
@@ -285,12 +281,20 @@ export const findLinksWithOpenAI = async (
             
             if (topicData) {
               // Mark this URL as used
-              usedUrls.set(url, topicData.topic);
+              usedUrls.add(url);
+              
+              // Extract some surrounding text for context
+              const surroundingTextStart = Math.max(0, urlIndex - 150);
+              const surroundingTextEnd = Math.min(fullText.length, urlIndex + url.length + 150);
+              let description = fullText.substring(surroundingTextStart, surroundingTextEnd).trim();
+              
+              // Clean up the description
+              description = cleanDescription(description, url);
               
               topicData.links.push({
                 url,
                 title: extractTitleFromUrl(url),
-                description: `Link found for topic: ${closestTopic}`
+                description
               });
               
               // Add to processed topics if not already there
@@ -350,6 +354,47 @@ function extractTitleFromUrl(url: string): string {
   } catch (e) {
     return 'Link';
   }
+}
+
+// Helper function to clean up description text
+function cleanDescription(description: string, url: string): string {
+  // Replace the URL in the description with empty string
+  description = description.replace(url, '');
+  
+  // Remove markdown formatting
+  description = description.replace(/\*\*/g, ''); // Remove bold markers
+  description = description.replace(/\[([^\]]+)\]\([^)]+\)/g, '$1'); // Replace markdown links with just the text
+  
+  // Remove broken formatting artifacts
+  description = description.replace(/\([^)]*\)/g, ''); // Remove parentheses content
+  description = description.replace(/[\[\]]/g, ''); // Remove brackets
+  
+  // Remove any start/end ellipses
+  description = description.replace(/^\.{3,}|\.{3,}$/g, '');
+  
+  // Remove leading/trailing punctuation
+  description = description.replace(/^[^\w]+|[^\w.]+$/g, '');
+  
+  // If the description starts with a dash or bullet, remove it
+  description = description.replace(/^[-•*]+ */g, '');
+  
+  // If we have a very short description or it's mostly garbage, generate a generic one
+  if (description.length < 20 || description.match(/[a-zA-Z]/g)?.length < 10) {
+    description = `Information about ${new URL(url).hostname.replace(/^www\./, '')}`;
+  }
+  
+  // Trim and ensure it ends with proper punctuation
+  description = description.trim();
+  if (!description.endsWith('.') && !description.endsWith('!') && !description.endsWith('?')) {
+    description += '.';
+  }
+  
+  // Capitalize first letter
+  if (description.length > 0) {
+    description = description.charAt(0).toUpperCase() + description.slice(1);
+  }
+  
+  return description;
 }
 
 // Export an empty function to satisfy imports
