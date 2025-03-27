@@ -1,13 +1,16 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
 import { ProcessingStage } from '@/types';
-import { Loader2 } from 'lucide-react';
+import { Loader2, X, Plus } from 'lucide-react';
+import DomainAvoidList from './DomainAvoidList';
+import TopicAvoidList from './TopicAvoidList';
+import { Slider } from '@/components/ui/slider';
 
 interface TranscriptInputProps {
-  onProcess: (transcript: string) => void;
+  onProcess: (transcript: string, topicCount: number, domainsToAvoid: string[], topicsToAvoid: string[]) => void;
   processingStage: ProcessingStage;
 }
 
@@ -16,18 +19,63 @@ const TranscriptInput: React.FC<TranscriptInputProps> = ({
   processingStage 
 }) => {
   const [transcript, setTranscript] = useState('');
-  const [charCount, setCharCount] = useState(0);
+  const [wordCount, setWordCount] = useState(0);
+  const [topicCount, setTopicCount] = useState(5);
+  const [domainsToAvoid, setDomainsToAvoid] = useState<string[]>(['wikipedia.org', 'amazon.com']);
+  const [topicsToAvoid, setTopicsToAvoid] = useState<string[]>([]);
+  const [newDomain, setNewDomain] = useState('');
+  const [newTopic, setNewTopic] = useState('');
   
   const handleTextChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const value = e.target.value;
     setTranscript(value);
-    setCharCount(value.length);
+    const words = value.trim() ? value.trim().split(/\s+/).length : 0;
+    setWordCount(words);
   };
 
   const handleProcess = () => {
     if (transcript.trim().length > 0) {
-      onProcess(transcript);
+      onProcess(transcript, topicCount, domainsToAvoid, topicsToAvoid);
     }
+  };
+  
+  const handleDomainAdd = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (newDomain && domainsToAvoid.length < 10) {
+      let cleanDomain = newDomain.trim()
+        .replace(/^(https?:\/\/)?(www\.)?/, '')
+        .replace(/\/.*$/, '');
+      
+      const domainParts = cleanDomain.split('.');
+      if (domainParts.length > 2) {
+        cleanDomain = domainParts.slice(-2).join('.');
+      }
+      
+      if (cleanDomain && !domainsToAvoid.includes(cleanDomain)) {
+        setDomainsToAvoid([...domainsToAvoid, cleanDomain]);
+      }
+      setNewDomain('');
+    }
+  };
+  
+  const handleDomainRemove = (domain: string) => {
+    setDomainsToAvoid(domainsToAvoid.filter((d) => d !== domain));
+  };
+  
+  const handleTopicAdd = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (newTopic && topicsToAvoid.length < 10) {
+      const limitedTopic = newTopic.trim().substring(0, 31);
+      
+      if (limitedTopic && !topicsToAvoid.includes(limitedTopic)) {
+        setTopicsToAvoid([...topicsToAvoid, limitedTopic]);
+      }
+      setNewTopic('');
+    }
+  };
+  
+  const handleTopicRemove = (topic: string) => {
+    setTopicsToAvoid(topicsToAvoid.filter((t) => t !== topic));
   };
   
   const isDisabled = 
@@ -38,9 +86,9 @@ const TranscriptInput: React.FC<TranscriptInputProps> = ({
     <Card className="w-full animate-fade-in">
       <CardHeader>
         <CardTitle className="flex items-center justify-between">
-          <span>Podcast Content</span>
+          <span>Podcast Transcript</span>
           <div className="chip">
-            {charCount.toLocaleString()} characters
+            {wordCount.toLocaleString()} words
           </div>
         </CardTitle>
       </CardHeader>
@@ -53,8 +101,44 @@ const TranscriptInput: React.FC<TranscriptInputProps> = ({
           disabled={isDisabled}
         />
         <p className="text-xs text-muted-foreground mt-2">
-          Paste a full podcast transcript (up to 12,000 words) including timestamps and speaker names.
+          Paste a full podcast transcript including timestamps and speaker names.
         </p>
+        
+        <div className="mt-6 space-y-4">
+          <div>
+            <h3 className="text-sm font-medium mb-2">Number of Topics to Find ({topicCount})</h3>
+            <div className="flex items-center gap-4">
+              <Slider
+                min={1}
+                max={10}
+                step={1}
+                value={[topicCount]}
+                onValueChange={(value) => setTopicCount(value[0])}
+                disabled={isDisabled}
+                className="flex-1"
+              />
+              <span className="text-sm font-medium w-6 text-center">{topicCount}</span>
+            </div>
+          </div>
+          
+          <DomainAvoidList 
+            domains={domainsToAvoid}
+            onRemove={handleDomainRemove}
+            newDomain={newDomain}
+            setNewDomain={setNewDomain}
+            onAdd={handleDomainAdd}
+            disabled={isDisabled}
+          />
+          
+          <TopicAvoidList 
+            topics={topicsToAvoid}
+            onRemove={handleTopicRemove}
+            newTopic={newTopic}
+            setNewTopic={setNewTopic}
+            onAdd={handleTopicAdd}
+            disabled={isDisabled}
+          />
+        </div>
       </CardContent>
       <CardFooter className="flex justify-end">
         <Button 

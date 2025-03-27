@@ -5,17 +5,15 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import { LinkItem } from '@/types';
-import { ExternalLink, AlertCircle, Info } from 'lucide-react';
-import { Alert, AlertDescription } from '@/components/ui/alert';
+import { ExternalLink, Info } from 'lucide-react';
 import { useIsMobile } from '@/hooks/use-mobile';
 
 interface LinksListProps {
   links: LinkItem[];
   onLinkToggle: (id: string, checked: boolean) => void;
-  usedMockData?: boolean;
 }
 
-const LinksList: React.FC<LinksListProps> = ({ links, onLinkToggle, usedMockData }) => {
+const LinksList: React.FC<LinksListProps> = ({ links, onLinkToggle }) => {
   const isMobile = useIsMobile();
   
   if (links.length === 0) {
@@ -46,16 +44,6 @@ const LinksList: React.FC<LinksListProps> = ({ links, onLinkToggle, usedMockData
         <CardTitle>Discovered Links ({totalLinks})</CardTitle>
       </CardHeader>
       <CardContent className="relative">
-        {usedMockData && (
-          <Alert className="mb-4" variant="warning">
-            <AlertCircle className="h-4 w-4" />
-            <AlertDescription>
-              Currently showing example links because an OpenAI API key is either missing, invalid, or has insufficient permissions. 
-              Please add a valid OpenAI API key with access to GPT models using the "Set OpenAI API Key" button above.
-            </AlertDescription>
-          </Alert>
-        )}
-        
         <div className="flex items-center gap-2 mb-3 text-sm text-muted-foreground">
           <Info className="h-4 w-4" />
           <span>Select which links appear in the summary by using the checkboxes below. Unchecked links will not appear in the summary.</span>

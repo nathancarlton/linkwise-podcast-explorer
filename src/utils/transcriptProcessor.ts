@@ -1,14 +1,14 @@
 
-// Main export file that re-exports all the functionality from the other files
-// This maintains backward compatibility with any existing imports
+// Main functionality for processing transcripts and finding topics
 
-import { processTranscript } from './transcriptProcessor';
+import { processTranscript as processTranscriptImpl } from './transcriptUtils';
 import { findLinksForTopics } from './linkFinder';
 import { parseUserProvidedLinks } from './linkParser';
 import { testLinkSearch, testFullProcess } from './testLinkSearch';
 
+// Re-export the implementations
 export {
-  processTranscript,
+  processTranscriptImpl as processTranscript,
   findLinksForTopics,
   parseUserProvidedLinks,
   testLinkSearch,

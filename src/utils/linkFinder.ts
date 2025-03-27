@@ -3,21 +3,32 @@ import { ProcessedTopic } from '../types';
 import { validateUrl } from './urlUtils';
 
 /**
- * Find links for the extracted topics using OpenAI and search APIs
+ * Find links for the extracted topics using OpenAI and web search functionality
  * 
  * @param topics - Array of topics to search links for
  * @param apiKey - OpenAI API key
+ * @param domainsToAvoid - List of domains to avoid in search results
  * @returns Promise resolving to processed topics with links and whether mock data was used
  */
-export const findLinksForTopics = async (topics: string[], apiKey?: string): Promise<{ processedTopics: ProcessedTopic[], usedMockData: boolean }> => {
+export const findLinksForTopics = async (
+  topics: any[], 
+  apiKey?: string, 
+  domainsToAvoid: string[] = []
+): Promise<{ processedTopics: ProcessedTopic[], usedMockData: boolean }> => {
   console.log('Finding links for topics:', topics);
+  console.log('Domains to avoid:', domainsToAvoid);
   
-  if (!apiKey || apiKey.trim() === '' || !apiKey.startsWith('sk-') || apiKey.length < 20) {
+  if (!apiKey || apiKey.trim() === '' || !apiKey.startsWith('sk-')) {
     console.error('No valid OpenAI API key provided. Cannot find links for topics.');
     return { processedTopics: [], usedMockData: false };
   }
   
   try {
+    // Build the list of domains to avoid as a formatted string
+    const domainsToAvoidStr = domainsToAvoid.length > 0 
+      ? `Avoid linking to these domains: ${domainsToAvoid.join(', ')}.` 
+      : '';
+    
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -31,43 +42,33 @@ export const findLinksForTopics = async (topics: string[], apiKey?: string): Pro
             role: 'system',
             content: `You are an assistant that finds high-quality, specific, and authoritative links for topics mentioned in podcasts.
 
-For each topic, provide 2-3 highly relevant links to SPECIFIC PAGES (not just homepages):
-1. Prioritize links from:
-   - Harvard Business Review (hbr.org)
-   - McKinsey (mckinsey.com)
-   - Nature (nature.com)
-   - Major educational institutions (.edu domains)
-   - Authoritative industry sites
-   - Scholarly publications
+For each topic, you'll use web search to find 2-3 highly relevant links to SPECIFIC PAGES:
 
-For each link, include:
-- Specific full URL with exact path (never use shortened URLs)
-- Full, descriptive title of the page
-- 1-2 sentence description of why this content is valuable and directly relevant to the topic
-
-IMPORTANT: 
-- Generate 15-20 total links across all topics
+Guidelines:
 - Focus on quality and relevance over quantity
-- Be very specific with URLs - include the full path to specific articles
+- Look for authoritative, reliable sources
 - Ensure the links are to real, accessible content that actually exists
-- Never hallucinate or make up URLs - only suggest real pages that are accessible
+- For each link, include the full URL, title, and a brief description
+${domainsToAvoidStr}
 
-Return ONLY a JSON array with this structure: [{"topic": string, "context": string, "links": [{"url": string, "title": string, "description": string}]}]`
+Use your web search capability to find the most relevant information for each topic.`
           },
           {
             role: 'user',
             content: `Find specific, high-quality links for these podcast topics. For each topic, provide 2-3 links to SPECIFIC PAGES that address the exact context of the topic.
 
-Remember that many site URLs frequently change or get updated, so be very careful to provide current, working URLs. Focus on:
-1. Links from Harvard Business Review, McKinsey, Nature, educational institutions, and other authoritative sources
-2. Recent content (within the last 3-5 years) that is still accessible
-3. Specific article pages (not just section pages or home pages)
+${domainsToAvoidStr}
 
-Generate at least 15-20 total links across all topics (2-3 per topic): ${JSON.stringify(topics)}`
+Here are the topics: ${JSON.stringify(topics)}`
           }
         ],
         temperature: 0.2,
-        response_format: { type: 'json_object' }
+        tools: [
+          {
+            "type": "web_search"
+          }
+        ],
+        tool_choice: { "type": "web_search" }
       })
     });
 
@@ -79,92 +80,168 @@ Generate at least 15-20 total links across all topics (2-3 per topic): ${JSON.st
 
     const data = await response.json();
     
-    if (!data || !data.choices || !data.choices[0] || !data.choices[0].message || !data.choices[0].message.content) {
+    if (!data || !data.choices || !data.choices[0] || !data.choices[0].message) {
       console.error('Invalid response format from OpenAI API');
       return { processedTopics: [], usedMockData: false };
     }
     
-    try {
-      const content = data.choices[0].message.content;
-      console.log('Raw API response:', content);
+    // Get the web search results from OpenAI
+    const message = data.choices[0].message;
+    
+    // Process the search results to get the links
+    // We need to extract the links from the tool calls and format them as ProcessedTopic objects
+    let processedTopics: ProcessedTopic[] = [];
+    
+    // Now send another request to format the search results into our desired format
+    if (message.tool_calls && message.tool_calls.length > 0) {
+      const searchResults = message.tool_calls
+        .filter((call: any) => call.type === "web_search")
+        .map((call: any) => call.web_search);
       
-      const parsedContent = JSON.parse(content);
+      // Send the search results to OpenAI to format them into our desired format
+      const formatResponse = await fetch('https://api.openai.com/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${apiKey}`
+        },
+        body: JSON.stringify({
+          model: 'gpt-4o-mini',
+          messages: [
+            {
+              role: 'system',
+              content: `You are an assistant that formats web search results into a structured JSON format for podcast topics. 
+              Format the search results for each topic into a JSON array with this structure: 
+              [{"topic": string, "context": string, "links": [{"url": string, "title": string, "description": string}]}]`
+            },
+            message,
+            {
+              role: 'user',
+              content: `Based on the web search you performed, format the results into a JSON array with this structure: 
+              [{"topic": string, "context": string, "links": [{"url": string, "title": string, "description": string}]}]
+              
+              The original topics were: ${JSON.stringify(topics)}
+              
+              For each topic, include 2-3 of the most relevant links from your search results. 
+              For each link, include the full URL, the title of the page, and a brief description of why it's relevant.
+              
+              Return ONLY the JSON array.`
+            }
+          ],
+          temperature: 0.1,
+          response_format: { type: 'json_object' }
+        })
+      });
+
+      if (!formatResponse.ok) {
+        const errorData = await formatResponse.json();
+        console.error('OpenAI API error during formatting:', errorData);
+        return { processedTopics: [], usedMockData: false };
+      }
+
+      const formatData = await formatResponse.json();
       
-      // Support different response formats from the API
-      const processedTopics = parsedContent.topics || parsedContent || [];
-      
-      if (!Array.isArray(processedTopics) || processedTopics.length === 0) {
-        console.error('No processed topics found in API response');
+      if (!formatData.choices || !formatData.choices[0] || !formatData.choices[0].message || !formatData.choices[0].message.content) {
+        console.error('Invalid response format from OpenAI API during formatting');
         return { processedTopics: [], usedMockData: false };
       }
       
-      // Validate and filter links to ensure they're high quality
-      const verifiedTopics: ProcessedTopic[] = [];
-      const validationPromises = [];
-      
-      for (const topic of processedTopics) {
-        if (!topic || !topic.topic || !Array.isArray(topic.links)) {
-          console.warn('Invalid topic object, skipping:', topic);
-          continue;
+      try {
+        const content = formatData.choices[0].message.content;
+        console.log('Formatted API response:', content);
+        
+        const parsedContent = JSON.parse(content);
+        
+        // Support different response formats from the API
+        const formattedTopics = Array.isArray(parsedContent) ? parsedContent : parsedContent.topics || [];
+        
+        if (formattedTopics.length === 0) {
+          console.error('No processed topics found in API response');
+          return { processedTopics: [], usedMockData: false };
         }
         
-        // Explicitly type the topic as ProcessedTopic to ensure TypeScript recognizes its structure
-        const typedTopic = topic as ProcessedTopic;
+        // Validate and filter links to ensure they're high quality
+        const verifiedTopics: ProcessedTopic[] = [];
+        const validationPromises = [];
         
-        // Validate all links for a topic in parallel
-        for (const link of typedTopic.links) {
-          if (!link || !link.url) {
-            console.warn('Invalid link object, skipping:', link);
+        for (const topic of formattedTopics) {
+          if (!topic || !topic.topic || !Array.isArray(topic.links)) {
+            console.warn('Invalid topic object, skipping:', topic);
             continue;
           }
           
-          // Push the validation promise to our array
-          validationPromises.push(
-            validateUrl(link.url).then(isValid => {
-              return {
-                topic: typedTopic,
-                link,
-                isValid
-              };
-            })
-          );
-        }
-      }
-      
-      // Wait for all validation promises to resolve
-      const validationResults = await Promise.all(validationPromises);
-      
-      // Group the validation results by topic
-      const groupedResults: Record<string, ProcessedTopic> = {};
-      
-      validationResults.forEach(result => {
-        const { topic, link, isValid } = result;
-        
-        if (isValid) {
-          if (!groupedResults[topic.topic]) {
-            groupedResults[topic.topic] = {
-              topic: topic.topic,
-              context: topic.context,
-              links: []
-            };
-          }
+          // Explicitly type the topic as ProcessedTopic to ensure TypeScript recognizes its structure
+          const typedTopic = topic as ProcessedTopic;
           
-          groupedResults[topic.topic].links.push(link);
-        } else {
-          console.warn(`Link validation failed for ${link.url}, excluding from results`);
+          // Validate all links for a topic in parallel
+          for (const link of typedTopic.links) {
+            if (!link || !link.url) {
+              console.warn('Invalid link object, skipping:', link);
+              continue;
+            }
+            
+            // Skip links from domains to avoid
+            const linkDomain = new URL(link.url).hostname.replace('www.', '');
+            const shouldSkip = domainsToAvoid.some(domain => 
+              linkDomain === domain || linkDomain.endsWith('.' + domain)
+            );
+            
+            if (shouldSkip) {
+              console.warn(`Skipping link from domain to avoid: ${linkDomain}`);
+              continue;
+            }
+            
+            // Push the validation promise to our array
+            validationPromises.push(
+              validateUrl(link.url).then(isValid => {
+                return {
+                  topic: typedTopic,
+                  link,
+                  isValid
+                };
+              })
+            );
+          }
         }
-      });
-      
-      // Convert the grouped results to an array
-      Object.values(groupedResults).forEach(groupedTopic => {
-        if (groupedTopic.links.length > 0) {
-          verifiedTopics.push(groupedTopic);
-        }
-      });
-      
-      return { processedTopics: verifiedTopics, usedMockData: false };
-    } catch (parseError) {
-      console.error('Error parsing OpenAI response:', parseError);
+        
+        // Wait for all validation promises to resolve
+        const validationResults = await Promise.all(validationPromises);
+        
+        // Group the validation results by topic
+        const groupedResults: Record<string, ProcessedTopic> = {};
+        
+        validationResults.forEach(result => {
+          const { topic, link, isValid } = result;
+          
+          if (isValid) {
+            if (!groupedResults[topic.topic]) {
+              groupedResults[topic.topic] = {
+                topic: topic.topic,
+                context: topic.context,
+                links: []
+              };
+            }
+            
+            groupedResults[topic.topic].links.push(link);
+          } else {
+            console.warn(`Link validation failed for ${link.url}, excluding from results`);
+          }
+        });
+        
+        // Convert the grouped results to an array
+        Object.values(groupedResults).forEach(groupedTopic => {
+          if (groupedTopic.links.length > 0) {
+            verifiedTopics.push(groupedTopic);
+          }
+        });
+        
+        return { processedTopics: verifiedTopics, usedMockData: false };
+      } catch (parseError) {
+        console.error('Error parsing OpenAI response:', parseError);
+        return { processedTopics: [], usedMockData: false };
+      }
+    } else {
+      console.error('No web search results found in OpenAI response');
       return { processedTopics: [], usedMockData: false };
     }
   } catch (error) {

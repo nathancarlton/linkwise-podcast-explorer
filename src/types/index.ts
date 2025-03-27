@@ -25,3 +25,9 @@ export enum ProcessingStage {
   FindingLinks = 'finding-links',
   Complete = 'complete',
 }
+
+export interface TopicItem {
+  topic: string;
+  context?: string;
+  checked: boolean;
+}

@@ -4,20 +4,21 @@ import { v4 as uuidv4 } from 'uuid';
 import TranscriptInput from '@/components/TranscriptInput';
 import LinksList from '@/components/LinksList';
 import LinkSummary from '@/components/LinkSummary';
+import TopicList from '@/components/TopicList';
 import ApiKeyInput from '@/components/ApiKeyInput';
 import { Separator } from '@/components/ui/separator';
 import { 
   processTranscript, 
   findLinksForTopics
 } from '@/utils/transcriptProcessor';
-import { LinkItem, ProcessingStage, ProcessedTopic } from '@/types';
+import { LinkItem, ProcessingStage, ProcessedTopic, TopicItem } from '@/types';
 import { toast } from 'sonner';
 
 const Index = () => {
   const [processingStage, setProcessingStage] = useState<ProcessingStage>(ProcessingStage.Initial);
   const [links, setLinks] = useState<LinkItem[]>([]);
+  const [topics, setTopics] = useState<TopicItem[]>([]);
   const [apiKey, setApiKey] = useState<string>('');
-  const [usedMockData, setUsedMockData] = useState<boolean>(false);
   const [transcriptHash, setTranscriptHash] = useState<string>('');
   
   const handleApiKeySave = (key: string) => {
@@ -36,7 +37,12 @@ const Index = () => {
     return hash.toString();
   };
 
-  const handleProcessTranscript = async (transcript: string) => {
+  const handleProcessTranscript = async (
+    transcript: string, 
+    topicCount: number, 
+    domainsToAvoid: string[],
+    topicsToAvoid: string[]
+  ) => {
     try {
       // Check if this is a new transcript
       const newHash = hashTranscript(transcript);
@@ -48,27 +54,42 @@ const Index = () => {
       // Start processing
       setProcessingStage(ProcessingStage.ProcessingTranscript);
       setLinks([]);
-      setUsedMockData(false);
+      setTopics([]);
       
       // Extract topics from transcript
-      const { topics, usedMockData: usedMockForTopics } = await processTranscript(transcript, apiKey);
+      const { topics: extractedTopics } = await processTranscript(
+        transcript, 
+        apiKey, 
+        topicCount,
+        topicsToAvoid
+      );
       
-      if (!topics || topics.length === 0) {
+      if (!extractedTopics || extractedTopics.length === 0) {
         toast.error('No relevant topics found in the transcript');
         setProcessingStage(ProcessingStage.Initial);
         return;
       }
       
-      console.log('Successfully extracted topics:', topics);
+      console.log('Successfully extracted topics:', extractedTopics);
+      
+      // Convert extracted topics to topic items
+      const topicItems: TopicItem[] = extractedTopics.map(topic => ({
+        topic: topic.topic,
+        context: topic.context,
+        checked: true
+      }));
+      
+      setTopics(topicItems);
       
       // Find links for the extracted topics
       setProcessingStage(ProcessingStage.FindingLinks);
-      const { processedTopics, usedMockData: usedMockForLinks } = await findLinksForTopics(topics, apiKey);
+      const { processedTopics } = await findLinksForTopics(
+        extractedTopics, 
+        apiKey,
+        domainsToAvoid
+      );
       
       console.log('Processed topics with links:', processedTopics);
-      
-      // Set whether mock data was used
-      setUsedMockData(usedMockForTopics || usedMockForLinks);
       
       // Convert processed topics to link items
       const linkItems = processTopicsToLinkItems(processedTopics || []);
@@ -77,11 +98,7 @@ const Index = () => {
       setProcessingStage(ProcessingStage.Complete);
       
       if (linkItems.length > 0) {
-        if (usedMockForTopics || usedMockForLinks) {
-          toast.warning('Generated example links - OpenAI API key is missing or invalid. Please add a valid key to get better results.');
-        } else {
-          toast.success(`Found ${linkItems.length} links across ${processedTopics?.length || 0} topics`);
-        }
+        toast.success(`Found ${linkItems.length} links across ${processedTopics?.length || 0} topics`);
       } else {
         toast.error('No links found for the extracted topics');
       }
@@ -135,6 +152,9 @@ const Index = () => {
           title = link.title || 'Untitled Link';
         }
         
+        // Check if topic is enabled
+        const topicEnabled = topics.find(t => t.topic === topicName)?.checked ?? true;
+        
         linkItems.push({
           id: uuidv4(),
           topic: topicName,
@@ -142,7 +162,7 @@ const Index = () => {
           title: title,
           context: topicContext,
           description: link.description || 'No description available',
-          checked: true, // Default to checked
+          checked: topicEnabled, // Default to checked if topic is enabled
         });
       });
     });
@@ -154,6 +174,18 @@ const Index = () => {
   const handleLinkToggle = (id: string, checked: boolean) => {
     setLinks(links.map(link => 
       link.id === id ? { ...link, checked } : link
+    ));
+  };
+  
+  const handleTopicToggle = (topic: string, checked: boolean) => {
+    // Update the topic
+    setTopics(topics.map(t => 
+      t.topic === topic ? { ...t, checked } : t
+    ));
+    
+    // Update all links for this topic
+    setLinks(links.map(link => 
+      link.topic === topic ? { ...link, checked } : link
     ));
   };
 
@@ -168,8 +200,8 @@ const Index = () => {
   return (
     <div className="min-h-screen flex flex-col items-center py-12 px-4 md:px-8">
       <header className="w-full max-w-4xl text-center mb-8 animate-slide-down">
-        <div className="chip mb-2">Link Generation Tool</div>
-        <h1 className="text-4xl font-bold mb-2">PodcastLinker</h1>
+        <div className="chip mb-2">Generate Useful Links from a Podcast Transcript</div>
+        <h1 className="text-4xl font-bold mb-2">Podcast Link Generator</h1>
         <p className="text-muted-foreground max-w-2xl mx-auto text-balance">
           Extract meaningful topics and generate authoritative links from your podcast transcripts.
           Perfect for show notes and resource pages.
@@ -184,12 +216,18 @@ const Index = () => {
           processingStage={processingStage}
         />
         
+        {topics.length > 0 && (
+          <TopicList 
+            topics={topics}
+            onTopicToggle={handleTopicToggle}
+          />
+        )}
+        
         {links.length > 0 && (
           <>
             <LinksList 
               links={links}
               onLinkToggle={handleLinkToggle}
-              usedMockData={usedMockData}
             />
             
             <LinkSummary links={links} />
