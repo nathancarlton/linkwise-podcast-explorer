@@ -29,6 +29,7 @@ export const findLinksForTopics = async (
       ? `Avoid linking to these domains: ${domainsToAvoid.join(', ')}.` 
       : '';
     
+    // First, we'll use OpenAI to search for links for each topic
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -67,7 +68,21 @@ Here are the topics: ${JSON.stringify(topics)}`
         ],
         tools: [
           {
-            type: "web_search"
+            type: "function",
+            function: {
+              name: "search_web",
+              description: "Search the web for information on a topic",
+              parameters: {
+                type: "object",
+                properties: {
+                  query: {
+                    type: "string",
+                    description: "The search query"
+                  }
+                },
+                required: ["query"]
+              }
+            }
           }
         ],
         tool_choice: "auto"
@@ -94,10 +109,8 @@ Here are the topics: ${JSON.stringify(topics)}`
     let processedTopics: ProcessedTopic[] = [];
     
     if (message.tool_calls && message.tool_calls.length > 0) {
-      // First, we need to get the search results
-      const searchResults = message.tool_calls
-        .filter((call: any) => call.type === "web_search")
-        .map((call: any) => call.web_search);
+      // Process the tool calls from OpenAI
+      const toolCalls = message.tool_calls;
       
       // Now send another request to format the search results
       const formatResponse = await fetch('https://api.openai.com/v1/chat/completions', {
