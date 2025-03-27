@@ -93,8 +93,8 @@ const LinkSearchTester: React.FC<LinkSearchTesterProps> = ({ apiKey }) => {
                   <Textarea
                     value={topics}
                     onChange={(e) => setTopics(e.target.value)}
-                    placeholder="Data Visualization
-Machine Learning Ethics
+                    placeholder="Data Visualization,
+Machine Learning Ethics,
 Sustainable Technology"
                     className="min-h-[150px]"
                   />
