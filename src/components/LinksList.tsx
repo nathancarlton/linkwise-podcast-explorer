@@ -113,14 +113,12 @@ const LinksList: React.FC<LinksListProps> = ({ links, onLinkToggle }) => {
                             className="font-medium cursor-pointer hover:text-primary transition-colors"
                           >
                             {link.title}
-                          </label>
-                          {/* Context is now hidden 
+                          </label> 
                           {link.context && (
                             <p className="text-sm text-muted-foreground italic mt-1">
                               {link.context}
                             </p>
                           )}
-                          */}
                           <div className="mt-1">
                             <a 
                               href={link.url} 

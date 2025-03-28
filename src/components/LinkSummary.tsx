@@ -27,8 +27,9 @@ const LinkSummary: React.FC<LinkSummaryProps> = ({ links }) => {
     ];
     
     checkedLinks.forEach(link => {
-      lines.push(`## ${link.topic}`);
-      // Context is now hidden
+      // Topics are now removed from link summary
+      // lines.push(`## ${link.topic}`);
+      // Context is now hidden from links summary
       //if (link.context) {
       //  lines.push(`*${link.context}*`);
       //  lines.push('');
@@ -49,7 +50,8 @@ const LinkSummary: React.FC<LinkSummaryProps> = ({ links }) => {
     ];
     
     checkedLinks.forEach(link => {
-      lines.push(`${link.topic}:`);
+      // Topics are now removed from link summary
+      // lines.push(`${link.topic}:`);
       // Context is now hidden
       //if (link.context) {
       //  lines.push(`  Context: ${link.context}`);
@@ -72,7 +74,8 @@ const LinkSummary: React.FC<LinkSummaryProps> = ({ links }) => {
     
     checkedLinks.forEach(link => {
       lines.push(`  <li>`);
-      lines.push(`    <strong>${link.topic}</strong>`);
+      // Topics are now removed from link summary 
+      // lines.push(`    <strong>${link.topic}</strong>`);
       // Context is now hidden
       //if (link.context) {
       //  lines.push(`    <p><em>${link.context}</em></p>`);
@@ -94,7 +97,7 @@ const LinkSummary: React.FC<LinkSummaryProps> = ({ links }) => {
         <h1>Links mentioned in this episode</h1>
         {checkedLinks.map((link, index) => (
           <div key={index} className="mb-6">
-            <h2>{link.topic}</h2>
+            {/* Topic is now hidden <h2>{link.topic}</h2> */}
             {/* Context is now hidden 
             {link.context && (
               <p className="italic text-muted-foreground">{link.context}</p>
