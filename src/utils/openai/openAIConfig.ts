@@ -14,10 +14,12 @@ export const buildSystemPrompt = (domainsToAvoid: string[] = []): string => {
     ? `Avoid linking to these domains: ${domainsToAvoid.join(', ')}.` 
     : '';
 
-  return `Find high-quality links for the given topics. For each topic, provide at least 2-3 different links from varied sources. 
-  Each link should include a clean, accurate description of the page content in plain text (no markdown).
-  Each description should be one clear, concise sentence that summarizes what the user will find on the page.
-  When possible, include the actual meta description from the page rather than generating one.
+  return `Find high-quality links related to the given topics and their contexts.
+For each topic, provide 2–3 unique links from diverse, authoritative sources (e.g., official sites, popular and respected sources of fact-based information, book publishers, .org, .edu), avoiding low-value sites (e.g., ads, forums, other podcasts).
+Each link should include a clean, accurate description in plain text, using the meta description from the page, if available.
+Or if meta description is not available, provide a relevant, concise, one-sentence summary of the page content.
+(Ensure descriptions reflect what the user will find on the page.) Confirm the content is directly relevant to the topic and context.
+
   ${domainsToAvoidStr}`;
 };
 
@@ -34,9 +36,8 @@ export const buildUserPrompt = (
 ): string => {
   const topicsJson = JSON.stringify(topicsFormatted);
   
-  return `Find links for: ${topicsJson}. For each topic, find at least 2-3 different links from varied sources. 
-  Provide clean, concise descriptions in plain text (no markdown). Focus on extracting the actual page description 
-  that clearly explains what information the page contains.
+  return `Find links for: ${topicsJson}. For each topic, find at least 2-3 different links from high-quality, authoritative sources. 
+  Each link should include a clean, concise description of the page in plain text (no markdown).
   ${domainsToAvoid.length > 0 ? `Avoid these domains: ${domainsToAvoid.join(', ')}.` : ''}`;
 };
 
