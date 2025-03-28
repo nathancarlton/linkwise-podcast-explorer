@@ -36,8 +36,7 @@ export const buildUserPrompt = (
 ): string => {
   const topicsJson = JSON.stringify(topicsFormatted);
   
-  return `Find links for: ${topicsJson}. For each topic, find at least 2-3 different links from high-quality, authoritative sources. 
-  Each link should include a clean, concise description of the page in plain text (no markdown).
+  return `Find links for: ${topicsJson}. For each topic, find at least 2-3 different links from high-quality, authoritative sources. Each link must include a page title that represents the page topic (not the domain) and a clean, concise description of the page in plain text (no markdown). Do not add any extra text like "here are some links..." Do not use any markdown.
   ${domainsToAvoid.length > 0 ? `Avoid these domains: ${domainsToAvoid.join(', ')}.` : ''}`;
 };
 
