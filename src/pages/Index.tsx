@@ -87,9 +87,18 @@ const Index = () => {
               links={links}
               onLinkToggle={handleLinkToggle}
             />
-            
             <LinkSummary links={links} />
           </>
+        )}
+
+        {/* Debug: Raw API Response */}
+        {rawResponse && (
+          <div className="mt-6">
+            <h2 className="text-lg font-bold mb-2">Debug: Raw Response</h2>
+            <pre className="bg-gray-100 p-4 rounded text-sm max-h-60 overflow-auto">
+              {JSON.stringify(rawResponse, null, 2)}
+            </pre>
+          </div>
         )}
       </main>
       
