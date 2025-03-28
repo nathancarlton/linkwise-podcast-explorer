@@ -7,9 +7,9 @@ export const useTopicsManager = () => {
   const [topicsToAvoid, setTopicsToAvoid] = useState<string[]>([]);
   const [newTopicToAvoid, setNewTopicToAvoid] = useState<string>('');
   
-  // Topics to add state
-  const [topicsToAdd, setTopicsToAdd] = useState<string[]>([]);
-  const [newTopicToAdd, setNewTopicToAdd] = useState<string>('');
+  // Removing Topics to add state
+  // const [topicsToAdd, setTopicsToAdd] = useState<string[]>([]);
+  // const [newTopicToAdd, setNewTopicToAdd] = useState<string>('');
 
   const handleAddTopicToAvoid = (e: React.FormEvent) => {
     e.preventDefault();
@@ -27,21 +27,21 @@ export const useTopicsManager = () => {
     setTopicsToAvoid(topicsToAvoid.filter(t => t !== topic));
   };
 
-  const handleAddTopicToAdd = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (newTopicToAdd.trim() && topicsToAdd.length < 10) {
-      if (!topicsToAdd.includes(newTopicToAdd.trim())) {
-        setTopicsToAdd([...topicsToAdd, newTopicToAdd.trim()]);
-        setNewTopicToAdd('');
-      } else {
-        toast.error('This topic is already in the list');
-      }
-    }
-  };
+  // const handleAddTopicToAdd = (e: React.FormEvent) => {
+    // e.preventDefault();
+    // if (newTopicToAdd.trim() && topicsToAdd.length < 10) {
+      // if (!topicsToAdd.includes(newTopicToAdd.trim())) {
+        // setTopicsToAdd([...topicsToAdd, newTopicToAdd.trim()]);
+        // setNewTopicToAdd('');
+      // } else {
+        // toast.error('This topic is already in the list');
+      // }
+    // }
+  // };
 
-  const handleRemoveTopicToAdd = (topic: string) => {
-    setTopicsToAdd(topicsToAdd.filter(t => t !== topic));
-  };
+  // const handleRemoveTopicToAdd = (topic: string) => {
+    // setTopicsToAdd(topicsToAdd.filter(t => t !== topic));
+  // };
 
   return {
     topicsToAvoid,
@@ -49,10 +49,10 @@ export const useTopicsManager = () => {
     setNewTopicToAvoid,
     handleAddTopicToAvoid,
     handleRemoveTopicToAvoid,
-    topicsToAdd,
-    newTopicToAdd,
-    setNewTopicToAdd,
-    handleAddTopicToAdd,
-    handleRemoveTopicToAdd
+    // topicsToAdd,
+    // newTopicToAdd,
+    // setNewTopicToAdd,
+    // handleAddTopicToAdd,
+    // handleRemoveTopicToAdd
   };
 };

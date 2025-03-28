@@ -18,7 +18,7 @@ export const useTranscriptProcessor = (apiKey: string) => {
     topicCount: number, 
     domainsToAvoid: string[],
     topicsToAvoid: string[],
-    topicsToAdd: string[]
+    // topicsToAdd: string[]
   ) => {
     try {
       // Check if this is a new transcript
@@ -45,18 +45,18 @@ export const useTranscriptProcessor = (apiKey: string) => {
       const allTopics = [...extractedTopics];
       
       // Add manually entered topics with proper structure
-      if (topicsToAdd.length > 0) {
-        console.log('Adding manual topics:', topicsToAdd);
-        topicsToAdd.forEach(topic => {
+      // if (topicsToAdd.length > 0) {
+        // console.log('Adding manual topics:', topicsToAdd);
+        // topicsToAdd.forEach(topic => {
           // Check if the topic already exists (case insensitive)
-          if (!allTopics.some(t => typeof t === 'object' && t.topic && 
-              t.topic.toLowerCase() === topic.toLowerCase())) {
-            allTopics.push({ 
-              topic, 
-              context: 'Manually added topic' 
-            });
-          }
-        });
+          // if (!allTopics.some(t => typeof t === 'object' && t.topic && 
+              // t.topic.toLowerCase() === topic.toLowerCase())) {
+            // allTopics.push({ 
+              // topic, 
+              // context: 'Manually added topic' 
+            // });
+          // }
+        // });
       }
       
       console.log('All topics including manually added:', allTopics);

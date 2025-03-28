@@ -13,7 +13,7 @@ import { Slider } from '@/components/ui/slider';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 
 interface TranscriptInputProps {
-  onProcess: (transcript: string, topicCount: number, domainsToAvoid: string[], topicsToAvoid: string[], topicsToAdd: string[]) => void;
+  onProcess: (transcript: string, topicCount: number, domainsToAvoid: string[], topicsToAvoid: string[]) => void; {/* removed // , topicsToAdd: string[] */}
   processingStage: ProcessingStage;
   hasApiKey?: boolean;
   topicsToAvoid: string[];
@@ -21,11 +21,11 @@ interface TranscriptInputProps {
   onRemoveTopicToAvoid: (topic: string) => void;
   newTopicToAvoid: string;
   setNewTopicToAvoid: (topic: string) => void;
-  topicsToAdd: string[];
+  {/* removed // topicsToAdd: string[];
   onAddTopicToAdd: (e: React.FormEvent) => void;
   onRemoveTopicToAdd: (topic: string) => void;
   newTopicToAdd: string;
-  setNewTopicToAdd: (topic: string) => void;
+  setNewTopicToAdd: (topic: string) => void; */}
 }
 
 const TranscriptInput: React.FC<TranscriptInputProps> = ({ 
@@ -36,12 +36,12 @@ const TranscriptInput: React.FC<TranscriptInputProps> = ({
   onAddTopicToAvoid,
   onRemoveTopicToAvoid,
   newTopicToAvoid,
-  setNewTopicToAvoid,
-  topicsToAdd,
+  setNewTopicToAvoid
+  {/* removed // topicsToAdd, 
   onAddTopicToAdd,
   onRemoveTopicToAdd,
   newTopicToAdd,
-  setNewTopicToAdd
+  setNewTopicToAdd */}
 }) => {
   const [transcript, setTranscript] = useState('');
   const [wordCount, setWordCount] = useState(0);
@@ -58,7 +58,7 @@ const TranscriptInput: React.FC<TranscriptInputProps> = ({
 
   const handleProcess = () => {
     if (transcript.trim().length > 0) {
-      onProcess(transcript, topicCount, domainsToAvoid, topicsToAvoid, topicsToAdd);
+      onProcess(transcript, topicCount, domainsToAvoid, topicsToAvoid); {/* Removed // , topicsToAdd */}
     }
   };
   
@@ -157,14 +157,14 @@ const TranscriptInput: React.FC<TranscriptInputProps> = ({
             disabled={isDisabled}
           />
           
-          <TopicAddList 
+          {/* Removing <TopicAddList 
             topics={topicsToAdd}
             onRemove={onRemoveTopicToAdd}
             newTopic={newTopicToAdd}
             setNewTopic={setNewTopicToAdd}
             onAdd={onAddTopicToAdd}
             disabled={isDisabled}
-          />
+          /> */}
         </div>
       </CardContent>
       <CardFooter className="flex justify-end">

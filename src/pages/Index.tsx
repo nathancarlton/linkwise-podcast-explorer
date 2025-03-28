@@ -19,9 +19,9 @@ const Index = () => {
   
   const { 
     topicsToAvoid, newTopicToAvoid, setNewTopicToAvoid,
-    handleAddTopicToAvoid, handleRemoveTopicToAvoid,
-    topicsToAdd, newTopicToAdd, setNewTopicToAdd,
-    handleAddTopicToAdd, handleRemoveTopicToAdd
+    handleAddTopicToAvoid, handleRemoveTopicToAvoid
+    {/* topicsToAdd, newTopicToAdd, setNewTopicToAdd,
+    handleAddTopicToAdd, handleRemoveTopicToAdd */}
   } = useTopicsManager();
   
   const {
@@ -50,20 +50,14 @@ const Index = () => {
           Extract meaningful topics and generate authoritative links from your podcast transcripts.
           Perfect for show notes and resource pages.
         </p>
-        <div className="mt-4">
-          <Link to="/tester" className="text-sm flex items-center justify-center gap-1 text-muted-foreground hover:text-foreground transition-colors">
-            <Beaker className="h-4 w-4" /> 
-            Advanced Testing Tools
-          </Link>
-        </div>
       </header>
       
       <main className="w-full max-w-4xl">
         <ApiKeyInput onApiKeySave={handleApiKeySave} />
         
         <TranscriptInput 
-          onProcess={(transcript, topicCount, domainsToAvoid, topicsToAvoid, topicsToAdd) => 
-            handleProcessTranscript(transcript, topicCount, domainsToAvoid, topicsToAvoid, topicsToAdd)}
+          onProcess={(transcript, topicCount, domainsToAvoid, topicsToAvoid) => {/* Removed topicsToAdd */}
+            handleProcessTranscript(transcript, topicCount, domainsToAvoid, topicsToAvoid)} {/* Removed topicsToAdd */}
           processingStage={processingStage}
           hasApiKey={hasValidApiKey}
           topicsToAvoid={topicsToAvoid}
@@ -71,11 +65,11 @@ const Index = () => {
           onRemoveTopicToAvoid={handleRemoveTopicToAvoid}
           newTopicToAvoid={newTopicToAvoid}
           setNewTopicToAvoid={setNewTopicToAvoid}
-          topicsToAdd={topicsToAdd}
+          {/* Removed topicsToAdd topicsToAdd={topicsToAdd}
           onAddTopicToAdd={handleAddTopicToAdd}
           onRemoveTopicToAdd={handleRemoveTopicToAdd}
           newTopicToAdd={newTopicToAdd}
-          setNewTopicToAdd={setNewTopicToAdd}
+          setNewTopicToAdd={setNewTopicToAdd} */}
         />
         
         {topics.length > 0 && (
@@ -99,6 +93,12 @@ const Index = () => {
       
       <footer className="mt-12 text-center text-sm text-muted-foreground animate-fade-in">
         <p>Designed for podcasters to easily share relevant resources with their audience.</p>
+        <div className="mt-4">
+          <Link to="/tester" className="text-sm flex items-center justify-center gap-1 text-muted-foreground hover:text-foreground transition-colors">
+            <Beaker className="h-4 w-4" /> 
+            Link Tester (DevTool)
+          </Link>
+        </div>
       </footer>
     </div>
   );
