@@ -129,26 +129,34 @@ Transcript: ${transcript}`
       }
       
       // Ensure we have exactly the requested number of topics
+      const finalTopics = [];
+      
       if (extractedTopics.length < safeTopicCount) {
         console.warn(`Only ${extractedTopics.length} topics were extracted, but ${safeTopicCount} were requested. Adding placeholder topics.`);
         
+        // Add all existing topics
+        finalTopics.push(...extractedTopics);
+        
         // Add placeholder topics if needed
         for (let i = extractedTopics.length; i < safeTopicCount; i++) {
-          extractedTopics.push({
+          finalTopics.push({
             topic: `Topic ${i + 1}`,
             context: "Additional topic extracted from the transcript"
           });
         }
       } else if (extractedTopics.length > safeTopicCount) {
         console.warn(`${extractedTopics.length} topics were extracted, but only ${safeTopicCount} were requested. Truncating list.`);
-        // Truncate the list to the requested number of topics
-        extractedTopics.splice(safeTopicCount);
+        // Take only the first safeTopicCount topics
+        finalTopics.push(...extractedTopics.slice(0, safeTopicCount));
+      } else {
+        // We have exactly the right number
+        finalTopics.push(...extractedTopics);
       }
       
-      console.log('Extracted topics count:', extractedTopics.length, 'of', safeTopicCount, 'requested');
-      console.log('Extracted topics:', extractedTopics);
+      console.log('Final topics count:', finalTopics.length, 'of', safeTopicCount, 'requested');
+      console.log('Final topics:', finalTopics);
       
-      return { topics: extractedTopics, usedMockData: false };
+      return { topics: finalTopics, usedMockData: false };
     } catch (parseError) {
       console.error('Error parsing OpenAI response:', parseError);
       return { topics: [], usedMockData: false };
