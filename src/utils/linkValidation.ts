@@ -34,7 +34,7 @@ export const validateTopicLinks = async (
       );
       
       if (shouldSkip) {
-        console.warn(`Skipping link from domain to avoid: ${linkDomain}`);
+        console.warn(`Skipping link from domain to avoid: ${link.url} (domain: ${linkDomain})`);
         continue;
       }
       
@@ -42,12 +42,13 @@ export const validateTopicLinks = async (
       const isValid = await validateUrl(link.url);
       
       if (isValid) {
+        console.log(`Link validated successfully: ${link.url}`);
         validatedLinks.push(link);
       } else {
         console.warn(`Link validation failed for ${link.url}, excluding from results`);
       }
     } catch (urlError) {
-      console.warn(`Invalid URL format: ${link.url}`);
+      console.warn(`Invalid URL format: ${link.url}, error:`, urlError);
     }
   }
   

@@ -24,13 +24,15 @@ export const processAPIResponse = async (
     
     try {
       parsedContent = JSON.parse(content);
+      console.log('Parsed API response content:', parsedContent);
     } catch (parseError) {
       console.error('Error parsing OpenAI response content:', parseError);
       
       // Try to extract URLs directly from the text if JSON parsing fails
       const topics = topicsFormatted.map(t => t.topic);
       const extractedTopics = extractLinksFromText(content, topics);
-      
+
+      console.log('Extracted topics from text (fallback):', extractedTopics);
       if (extractedTopics.length > 0) {
         return { processedTopics: extractedTopics, usedMockData: false };
       }
@@ -56,6 +58,7 @@ export const processAPIResponse = async (
       }
       
       const validatedLinks = await validateTopicLinks(topic, domainsToAvoid);
+      console.log(`Validated links for topic "${topic.topic}":`, validatedLinks);
       
       if (validatedLinks.length > 0) {
         processedTopics.push({
@@ -63,10 +66,14 @@ export const processAPIResponse = async (
           context: topic.context || '',
           links: validatedLinks
         });
+        } else {
+          console.warn(`No valid links for topic "${topic.topic}" after validation`);
+        }
       }
     }
     
     // If we have no topics with valid links, return empty array
+    console.log('Final processed topics:', processedTopics);
     if (processedTopics.length === 0) {
       return { processedTopics: [], usedMockData: false };
     }

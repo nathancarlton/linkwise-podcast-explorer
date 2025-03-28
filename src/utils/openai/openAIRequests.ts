@@ -46,7 +46,9 @@ export const makeInitialRequest = async (
       throw new Error(`OpenAI API error: ${response.status}`);
     }
 
-    return await response.json();
+    const data = await response.json();
+    console.log('Raw OpenAI API response:', JSON.stringify(data, null, 2));
+    return data;
   } catch (error) {
     console.error('Error making initial request to OpenAI:', error);
     throw error;
