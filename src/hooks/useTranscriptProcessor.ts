@@ -17,7 +17,7 @@ export const useTranscriptProcessor = (apiKey: string) => {
     transcript: string, 
     topicCount: number, 
     domainsToAvoid: string[],
-    topicsToAvoid: string[],
+    topicsToAvoid: string[]
     // topicsToAdd: string[]
   ) => {
     try {
