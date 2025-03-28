@@ -20,22 +20,35 @@ const LinkSummary: React.FC<LinkSummaryProps> = ({ links }) => {
     return null;
   }
 
+  // Group links by topic
+  const groupedLinks = checkedLinks.reduce((acc, link) => {
+    if (!acc[link.topic]) {
+      acc[link.topic] = [];
+    }
+    acc[link.topic].push(link);
+    return acc;
+  }, {} as Record<string, LinkItem[]>);
+
   const generateMarkdownSummary = () => {
     const lines = [
       '# Links mentioned in this episode',
       '',
     ];
     
-    checkedLinks.forEach(link => {
-      lines.push(`## ${link.topic}`);
+    Object.entries(groupedLinks).forEach(([topic, topicLinks]) => {
+      lines.push(`## ${topic}`);
       // Context is now hidden
       //if (link.context) {
       //  lines.push(`*${link.context}*`);
       //  lines.push('');
       //}
-      lines.push(`[${link.title}](${link.url})`);
-      // Description is now hidden
-      //lines.push(`${link.description}`);
+      
+      topicLinks.forEach(link => {
+        lines.push(`[${link.title}](${link.url})`);
+        // Description is now hidden
+        //lines.push(`${link.description}`);
+      });
+      
       lines.push('');
     });
     
@@ -48,16 +61,20 @@ const LinkSummary: React.FC<LinkSummaryProps> = ({ links }) => {
       '',
     ];
     
-    checkedLinks.forEach(link => {
-      lines.push(`${link.topic}:`);
+    Object.entries(groupedLinks).forEach(([topic, topicLinks]) => {
+      lines.push(`${topic}:`);
       // Context is now hidden
       //if (link.context) {
       //  lines.push(`  Context: ${link.context}`);
       //}
-      lines.push(`  ${link.title}`);
-      lines.push(`  ${link.url}`);
-      // Description is now hidden
-      //lines.push(`  ${link.description}`);
+      
+      topicLinks.forEach(link => {
+        lines.push(`  ${link.title}`);
+        lines.push(`  ${link.url}`);
+        // Description is now hidden
+        //lines.push(`  ${link.description}`);
+      });
+      
       lines.push('');
     });
     
@@ -70,16 +87,20 @@ const LinkSummary: React.FC<LinkSummaryProps> = ({ links }) => {
       '<ul>',
     ];
     
-    checkedLinks.forEach(link => {
+    Object.entries(groupedLinks).forEach(([topic, topicLinks]) => {
       lines.push(`  <li>`);
-      lines.push(`    <strong>${link.topic}</strong>`);
+      lines.push(`    <strong>${topic}</strong>`);
       // Context is now hidden
       //if (link.context) {
       //  lines.push(`    <p><em>${link.context}</em></p>`);
       //}
-      lines.push(`    <a href="${link.url}" target="_blank">${link.title}</a>`);
-      // Description is now hidden
-      //lines.push(`    <p>${link.description}</p>`);
+      
+      topicLinks.forEach(link => {
+        lines.push(`    <a href="${link.url}" target="_blank">${link.title}</a><br/>`);
+        // Description is now hidden
+        //lines.push(`    <p>${link.description}</p>`);
+      });
+      
       lines.push(`  </li>`);
     });
     
@@ -92,22 +113,23 @@ const LinkSummary: React.FC<LinkSummaryProps> = ({ links }) => {
     return (
       <div className="prose dark:prose-invert max-w-none">
         <h1>Links mentioned in this episode</h1>
-        {checkedLinks.map((link, index) => (
-          <div key={index} className="mb-6">
-            <h2>{link.topic}</h2>
+        {Object.entries(groupedLinks).map(([topic, topicLinks], topicIndex) => (
+          <div key={topicIndex} className="mb-6">
+            <h2>{topic}</h2>
             {/* Context is now hidden 
             {link.context && (
               <p className="italic text-muted-foreground">{link.context}</p>
             )}
             */}
-            <p>
-              <a href={link.url} target="_blank" rel="noreferrer" className="font-medium underline">
-                {link.title}
-              </a>
-            </p>
-            {/* Description is now hidden 
-            <p>{link.description}</p>
-            */}
+            <div className="space-y-2">
+              {topicLinks.map((link, linkIndex) => (
+                <p key={linkIndex}>
+                  <a href={link.url} target="_blank" rel="noreferrer" className="font-medium underline">
+                    {link.title}
+                  </a>
+                </p>
+              ))}
+            </div>
           </div>
         ))}
       </div>
