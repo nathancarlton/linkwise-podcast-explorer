@@ -48,37 +48,39 @@ export const processTranscript = async (
         messages: [
           {
             role: 'system',
-            content: `You are an expert podcast transcript analyst designed to extract the most relevant, useful, important, focused, and specific topics from podcast transcripts. 
+            content: `You are an expert podcast summary writer who identifies highly relevant, useful topics from podcast episode transcripts. 
               
-Extract exactly ${safeTopicCount} topics from the transcript provided.
+Extract exactly ${safeTopicCount} relevant, useful topics from the transcript provided.
 
 Guidelines:
-- If the topic is a concept, be extremely specific, based on the podcast transcript - e.g., "The impact of quantum computing on cryptography" instead of just "Quantum computing"
-- Each topic should be 1-10 words, concise yet descriptive
-- Focus on the core concepts, techniques, books, products, organizations or people discussed in depth
-- For any books mentioned, extract them as "[Book Title] by [Author Name]"
-  - Example: use "Range by David Epstein" instead of "Books on Generalist Skills"
-  - Example: use "Competing in the Age of AI by Karim Lakhani" instead of "Books about AI Strategy"
-- For techniques or methods discussed, be specific about what approach or methodology was mentioned
 - Prioritize topics that will help the listeners dive deeper into the subjects discussed in the transcript
+- A topic can be a book; Specifically looks for any books mentioned, and identify books as "[Book Title] by [Author Name]"
+  - Book Example 1: use "Range by David Epstein" instead of "Books on Generalist Skills"
+  - Book Example 2: use "Competing in the Age of AI by Karim Lakhani" instead of "Books about AI Strategy"
+- If the topic is an organization or school, name it completely.
+- If the topic is a concept, be extremely specific, based on the podcast transcript
+  - Concept Example: "The impact of quantum computing on cryptography" instead of just "Quantum computing"
+- Each topic should be 1-10 words, concise yet descriptive
+- Focus on the most relevant, useful books, organizations, schools, concepts, techniques, products, or people discussed in the transcript
+- For techniques or methods discussed, be specific about what approach or methodology was mentioned
 - Do not include generic topics that could apply to any podcast
 - Extract topics that someone would want to learn more about
-- Include the context to understand what's interesting about this topic
+- Include the context about each topic, from the transcript.
 
 ${topicsToAvoidStr}
 
 Return ONLY a JSON array with this structure: {"topics": [{"topic": string, "context": string}]}
-The "topic" is the specific topic name, and "context" is a brief sentence explaining why this topic is relevant or interesting from the podcast.`
+The "topic" is the specific topic name, and "context" is a brief sentence that would help someone search for more information about the topic on the web.`
           },
           {
             role: 'user',
-            content: `Extract the ${safeTopicCount} most important and specific topics from this podcast transcript, focusing on concepts, techniques, books, products, people or organizations discussed in detail. 
+            content: `Extract the ${safeTopicCount} most relevant, useful, and specific topics from this podcast transcript, focusing on books, people or organizations, concepts, techniques, and products discussed in detail. 
             
-ALWAYS capture SPECIFIC BOOK TITLES with their AUTHORS when mentioned, using the format "[Book Title] by [Author Name]" - not just general categories about books.
+ALWAYS capture SPECIFIC BOOK TITLES with their AUTHORS when mentioned, using the format "[Book Title] by [Author Name]".
 
 ${topicsToAvoidStr}
 
-Provide each topic as a concise 1-10 word phrase paired with a brief context sentence explaining its significance.
+Provide each topic as a concise 1-10 word phrase paired with a brief context sentence that would help someone search for more information about the topic on the web.
 
 Transcript: ${transcript}`
           }
