@@ -20,10 +20,11 @@ const Index = () => {
   const { 
     topicsToAvoid, newTopicToAvoid, setNewTopicToAvoid,
     handleAddTopicToAvoid, handleRemoveTopicToAvoid
-    {/* topicsToAdd, newTopicToAdd, setNewTopicToAdd,
-    handleAddTopicToAdd, handleRemoveTopicToAdd */}
   } = useTopicsManager();
   
+    {/*Removed from above const ^^^ /* topicsToAdd, newTopicToAdd, setNewTopicToAdd,
+    handleAddTopicToAdd, handleRemoveTopicToAdd */}
+
   const {
     processingStage,
     links,
