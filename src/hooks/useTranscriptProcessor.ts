@@ -41,7 +41,7 @@ export const useTranscriptProcessor = (apiKey: string) => {
         topicsToAvoid
       );
       
-      // Create all topics array including extracted and manually added topics
+      // Create all topics array (now only extracted topics)
       const allTopics = [...extractedTopics];
       
       // Add manually entered topics with proper structure
@@ -57,9 +57,8 @@ export const useTranscriptProcessor = (apiKey: string) => {
             // });
           // }
         // });
-      }
       
-      console.log('All topics including manually added:', allTopics);
+      console.log('All topics:', allTopics);
       
       // Convert extracted topics to topic items
       const topicItems: TopicItem[] = allTopics.map(topic => ({
@@ -70,7 +69,7 @@ export const useTranscriptProcessor = (apiKey: string) => {
       
       setTopics(topicItems);
       
-      // Find links for all topics (extracted + manually added)
+      // Find links for all topics (extracted only now)
       setProcessingStage(ProcessingStage.FindingLinks);
       const { processedTopics } = await transcriptService.findLinks(
         allTopics,
