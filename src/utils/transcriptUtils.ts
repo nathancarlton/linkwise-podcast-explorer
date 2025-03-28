@@ -31,7 +31,6 @@ export const processTranscript = async (
   try {
     // Clamp topic count between 1-10
     const safeTopicCount = Math.max(1, Math.min(10, topicCount));
-    console.log('Safe topic count after clamping:', safeTopicCount);
     
     // Build the list of topics to avoid as a formatted string
     const topicsToAvoidStr = topicsToAvoid.length > 0 
@@ -51,7 +50,7 @@ export const processTranscript = async (
             role: 'system',
             content: `You are an expert podcast transcript analyst designed to extract the most relevant, useful, important, focused, and specific topics from podcast transcripts. 
               
-Extract EXACTLY ${safeTopicCount} topics from the transcript provided. You MUST return exactly ${safeTopicCount} topics, no more and no less.
+Extract exactly ${safeTopicCount} topics from the transcript provided.
 
 Guidelines:
 - If the topic is a concept, be extremely specific, based on the podcast transcript - e.g., "The impact of quantum computing on cryptography" instead of just "Quantum computing"
@@ -69,19 +68,15 @@ Guidelines:
 ${topicsToAvoidStr}
 
 Return ONLY a JSON array with this structure: {"topics": [{"topic": string, "context": string}]}
-The "topic" is the specific topic name, and "context" is a brief sentence explaining why this topic is relevant or interesting from the podcast.
-
-YOU MUST RETURN EXACTLY ${safeTopicCount} TOPICS! NO MORE, NO LESS!`
+The "topic" is the specific topic name, and "context" is a brief sentence explaining why this topic is relevant or interesting from the podcast.`
           },
           {
             role: 'user',
-            content: `Extract EXACTLY ${safeTopicCount} most important and specific topics from this podcast transcript, focusing on concepts, techniques, books, products, people or organizations discussed in detail. 
+            content: `Extract the ${safeTopicCount} most important and specific topics from this podcast transcript, focusing on concepts, techniques, books, products, people or organizations discussed in detail. 
             
 ALWAYS capture SPECIFIC BOOK TITLES with their AUTHORS when mentioned, using the format "[Book Title] by [Author Name]" - not just general categories about books.
 
 ${topicsToAvoidStr}
-
-You MUST return EXACTLY ${safeTopicCount} topics - no more, no less.
 
 Provide each topic as a concise 1-10 word phrase paired with a brief context sentence explaining its significance.
 
@@ -128,35 +123,8 @@ Transcript: ${transcript}`
         return { topics: [], usedMockData: false };
       }
       
-      // Ensure we have exactly the requested number of topics
-      const finalTopics = [];
-      
-      if (extractedTopics.length < safeTopicCount) {
-        console.warn(`Only ${extractedTopics.length} topics were extracted, but ${safeTopicCount} were requested. Adding placeholder topics.`);
-        
-        // Add all existing topics
-        finalTopics.push(...extractedTopics);
-        
-        // Add placeholder topics if needed
-        for (let i = extractedTopics.length; i < safeTopicCount; i++) {
-          finalTopics.push({
-            topic: `Topic ${i + 1}`,
-            context: "Additional topic extracted from the transcript"
-          });
-        }
-      } else if (extractedTopics.length > safeTopicCount) {
-        console.warn(`${extractedTopics.length} topics were extracted, but only ${safeTopicCount} were requested. Truncating list.`);
-        // Take only the first safeTopicCount topics
-        finalTopics.push(...extractedTopics.slice(0, safeTopicCount));
-      } else {
-        // We have exactly the right number
-        finalTopics.push(...extractedTopics);
-      }
-      
-      console.log('Final topics count:', finalTopics.length, 'of', safeTopicCount, 'requested');
-      console.log('Final topics:', finalTopics);
-      
-      return { topics: finalTopics, usedMockData: false };
+      console.log('Extracted topics:', extractedTopics);
+      return { topics: extractedTopics, usedMockData: false };
     } catch (parseError) {
       console.error('Error parsing OpenAI response:', parseError);
       return { topics: [], usedMockData: false };

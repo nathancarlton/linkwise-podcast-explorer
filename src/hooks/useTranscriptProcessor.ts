@@ -33,8 +33,6 @@ export const useTranscriptProcessor = (apiKey: string) => {
       setLinks([]);
       setTopics([]);
       
-      console.log(`Processing transcript with requested topic count: ${topicCount}`);
-      
       // Extract topics from transcript
       const { topics: extractedTopics } = await transcriptService.extractTopics(
         transcript,
@@ -42,8 +40,6 @@ export const useTranscriptProcessor = (apiKey: string) => {
         topicCount,
         topicsToAvoid
       );
-      
-      console.log(`Received ${extractedTopics.length} topics from API, requested ${topicCount}`);
       
       // Create all topics array including extracted and manually added topics
       const allTopics = [...extractedTopics];

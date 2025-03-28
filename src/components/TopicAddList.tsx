@@ -21,10 +21,6 @@ const TopicAddList: React.FC<TopicAddListProps> = ({
   onAdd,
   disabled = false
 }) => {
-  // Component is commented out but kept for future use
-  return null;
-  
-  /* Topics to Add interface commented out for now
   return (
     <div className="space-y-2">
       <h3 className="text-sm font-medium">Topics to Add ({topics.length}/10)</h3>
@@ -75,7 +71,6 @@ const TopicAddList: React.FC<TopicAddListProps> = ({
       </p>
     </div>
   );
-  */
 };
 
 export default TopicAddList;

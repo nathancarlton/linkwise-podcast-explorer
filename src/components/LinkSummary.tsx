@@ -1,92 +1,129 @@
 
 import React, { useState } from 'react';
-import { Card, CardContent, CardHeader, CardDescription, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Separator } from '@/components/ui/separator';
-import { Copy } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
-import { LinkItem } from '@/types';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { LinkItem } from '@/types';
+import { toast } from 'sonner';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 interface LinkSummaryProps {
   links: LinkItem[];
 }
 
 const LinkSummary: React.FC<LinkSummaryProps> = ({ links }) => {
-  const { toast } = useToast();
-  const [formatType, setFormatType] = useState<'plain' | 'markdown' | 'html' | 'rich'>('plain');
+  const [activeTab, setActiveTab] = useState('formatted');
   
-  // Only show checked links
   const checkedLinks = links.filter(link => link.checked);
   
   if (checkedLinks.length === 0) {
     return null;
   }
-  
-  // Group links by topic
-  const topicGroups = checkedLinks.reduce<Record<string, LinkItem[]>>((acc, link) => {
-    if (!acc[link.topic]) {
-      acc[link.topic] = [];
-    }
-    acc[link.topic].push(link);
-    return acc;
-  }, {});
-  
-  // Build summary text based on format type
-  const buildSummaryText = () => {
-    let summaryText = "";
+
+  const generateMarkdownSummary = () => {
+    const lines = [
+      '# Links mentioned in this episode',
+      '',
+    ];
     
-    Object.entries(topicGroups).forEach(([topic, topicLinks]) => {
-      switch (formatType) {
-        case 'markdown':
-          // Markdown format
-          summaryText += `## ${topic}\n\n`;
-          topicLinks.forEach(link => {
-            summaryText += `- [${link.title}](${link.url})\n`;
-          });
-          summaryText += "\n";
-          break;
-          
-        case 'html':
-          // HTML format
-          summaryText += `<h2>${topic}</h2>\n<ul>\n`;
-          topicLinks.forEach(link => {
-            summaryText += `  <li><a href="${link.url}" target="_blank">${link.title}</a></li>\n`;
-          });
-          summaryText += "</ul>\n\n";
-          break;
-          
-        case 'rich':
-          // Rich text format (for pasting into editors like Google Docs)
-          summaryText += `${topic}\n`;
-          topicLinks.forEach(link => {
-            summaryText += `${link.title}: ${link.url}\n`;
-          });
-          summaryText += "\n";
-          break;
-          
-        case 'plain':
-        default:
-          // Plain text format (default)
-          summaryText += `${topic}\n`;
-          topicLinks.forEach(link => {
-            summaryText += `${link.title}: ${link.url}\n`;
-          });
-          summaryText += "\n";
-          break;
-      }
+    checkedLinks.forEach(link => {
+      lines.push(`## ${link.topic}`);
+      // Context is now hidden
+      //if (link.context) {
+      //  lines.push(`*${link.context}*`);
+      //  lines.push('');
+      //}
+      lines.push(`[${link.title}](${link.url})`);
+      // Description is now hidden
+      //lines.push(`${link.description}`);
+      lines.push('');
     });
     
-    return summaryText.trim();
+    return lines.join('\n');
+  };
+
+  const generateTextSummary = () => {
+    const lines = [
+      'Links mentioned in this episode:',
+      '',
+    ];
+    
+    checkedLinks.forEach(link => {
+      lines.push(`${link.topic}:`);
+      // Context is now hidden
+      //if (link.context) {
+      //  lines.push(`  Context: ${link.context}`);
+      //}
+      lines.push(`  ${link.title}`);
+      lines.push(`  ${link.url}`);
+      // Description is now hidden
+      //lines.push(`  ${link.description}`);
+      lines.push('');
+    });
+    
+    return lines.join('\n');
   };
   
-  const summaryText = buildSummaryText();
+  const generateHtmlSummary = () => {
+    const lines = [
+      '<h3>Links mentioned in this episode:</h3>',
+      '<ul>',
+    ];
+    
+    checkedLinks.forEach(link => {
+      lines.push(`  <li>`);
+      lines.push(`    <strong>${link.topic}</strong>`);
+      // Context is now hidden
+      //if (link.context) {
+      //  lines.push(`    <p><em>${link.context}</em></p>`);
+      //}
+      lines.push(`    <a href="${link.url}" target="_blank">${link.title}</a>`);
+      // Description is now hidden
+      //lines.push(`    <p>${link.description}</p>`);
+      lines.push(`  </li>`);
+    });
+    
+    lines.push('</ul>');
+    return lines.join('\n');
+  };
   
-  const handleCopy = () => {
-    navigator.clipboard.writeText(summaryText);
-    toast({
-      title: "Copied to clipboard",
-      description: "The link summary has been copied to your clipboard.",
+  // Render markdown as formatted HTML for preview
+  const renderFormattedMarkdown = () => {
+    return (
+      <div className="prose dark:prose-invert max-w-none">
+        <h1>Links mentioned in this episode</h1>
+        {checkedLinks.map((link, index) => (
+          <div key={index} className="mb-6">
+            <h2>{link.topic}</h2>
+            {/* Context is now hidden 
+            {link.context && (
+              <p className="italic text-muted-foreground">{link.context}</p>
+            )}
+            */}
+            <p>
+              <a href={link.url} target="_blank" rel="noreferrer" className="font-medium underline">
+                {link.title}
+              </a>
+            </p>
+            {/* Description is now hidden 
+            <p>{link.description}</p>
+            */}
+          </div>
+        ))}
+      </div>
+    );
+  };
+  
+  const markdownSummary = generateMarkdownSummary();
+  const textSummary = generateTextSummary();
+  const htmlSummary = generateHtmlSummary();
+  
+  const copyToClipboard = (text: string, type: string) => {
+    navigator.clipboard.writeText(text).then(() => {
+      toast.success(`${type} copied to clipboard!`);
+    }).catch(err => {
+      console.error('Failed to copy:', err);
+      toast.error('Failed to copy to clipboard');
     });
   };
 
@@ -94,102 +131,70 @@ const LinkSummary: React.FC<LinkSummaryProps> = ({ links }) => {
     <Card className="w-full mt-6 animate-slide-up">
       <CardHeader>
         <CardTitle>Link Summary</CardTitle>
-        <CardDescription>
-          Ready to share with your audience
-        </CardDescription>
       </CardHeader>
       <CardContent>
-        <Tabs defaultValue="plain" value={formatType} onValueChange={(value) => setFormatType(value as any)} className="mb-4">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           <TabsList className="grid grid-cols-4 mb-4">
-            <TabsTrigger value="plain">Plain Text</TabsTrigger>
+            <TabsTrigger value="formatted">Formatted</TabsTrigger>
             <TabsTrigger value="markdown">Markdown</TabsTrigger>
+            <TabsTrigger value="text">Plain Text</TabsTrigger>
             <TabsTrigger value="html">HTML</TabsTrigger>
-            <TabsTrigger value="rich">Rich Text</TabsTrigger>
           </TabsList>
           
-          <TabsContent value="plain" className="mt-0">
-            <div className="mb-4 overflow-auto rounded-md bg-muted p-4">
-              <pre className="text-sm whitespace-pre-wrap">
-                {Object.entries(topicGroups).map(([topic, topicLinks], i) => (
-                  <React.Fragment key={topic}>
-                    <div className="font-semibold">{topic}</div>
-                    {topicLinks.map((link, j) => (
-                      <div key={link.id} className="ml-4">
-                        {link.title}: {link.url}
-                      </div>
-                    ))}
-                    {i < Object.keys(topicGroups).length - 1 && <div className="my-2" />}
-                  </React.Fragment>
-                ))}
-              </pre>
-            </div>
+          <TabsContent value="formatted" className="space-y-4">
+            <ScrollArea className="h-[300px] rounded-md border p-4">
+              {renderFormattedMarkdown()}
+            </ScrollArea>
+            <Button 
+              onClick={() => copyToClipboard(markdownSummary, 'Formatted summary')}
+              className="w-full transition-all hover:bg-primary/90"
+            >
+              Copy Formatted Summary
+            </Button>
           </TabsContent>
           
-          <TabsContent value="markdown" className="mt-0">
-            <div className="mb-4 overflow-auto rounded-md bg-muted p-4">
-              <pre className="text-sm whitespace-pre-wrap">
-                {Object.entries(topicGroups).map(([topic, topicLinks], i) => (
-                  <React.Fragment key={topic}>
-                    <div className="font-semibold">## {topic}</div>
-                    {topicLinks.map((link, j) => (
-                      <div key={link.id} className="ml-4">
-                        - [{link.title}]({link.url})
-                      </div>
-                    ))}
-                    {i < Object.keys(topicGroups).length - 1 && <div className="my-2" />}
-                  </React.Fragment>
-                ))}
-              </pre>
-            </div>
+          <TabsContent value="markdown" className="space-y-4">
+            <ScrollArea className="h-[300px] rounded-md border">
+              <div className="p-4 bg-secondary/40 font-mono text-sm overflow-x-auto whitespace-pre-wrap">
+                {markdownSummary}
+              </div>
+            </ScrollArea>
+            <Button 
+              onClick={() => copyToClipboard(markdownSummary, 'Markdown summary')}
+              className="w-full transition-all hover:bg-primary/90"
+            >
+              Copy Markdown Summary
+            </Button>
           </TabsContent>
           
-          <TabsContent value="html" className="mt-0">
-            <div className="mb-4 overflow-auto rounded-md bg-muted p-4">
-              <pre className="text-sm whitespace-pre-wrap">
-                {Object.entries(topicGroups).map(([topic, topicLinks], i) => (
-                  <React.Fragment key={topic}>
-                    <div className="font-semibold">&lt;h2&gt;{topic}&lt;/h2&gt;</div>
-                    <div>&lt;ul&gt;</div>
-                    {topicLinks.map((link, j) => (
-                      <div key={link.id} className="ml-4">
-                        &lt;li&gt;&lt;a href="{link.url}" target="_blank"&gt;{link.title}&lt;/a&gt;&lt;/li&gt;
-                      </div>
-                    ))}
-                    <div>&lt;/ul&gt;</div>
-                    {i < Object.keys(topicGroups).length - 1 && <div className="my-2" />}
-                  </React.Fragment>
-                ))}
-              </pre>
-            </div>
+          <TabsContent value="text" className="space-y-4">
+            <ScrollArea className="h-[300px] rounded-md border">
+              <div className="p-4 bg-secondary/40 font-mono text-sm overflow-x-auto whitespace-pre-wrap">
+                {textSummary}
+              </div>
+            </ScrollArea>
+            <Button 
+              onClick={() => copyToClipboard(textSummary, 'Text summary')}
+              className="w-full transition-all hover:bg-primary/90"
+            >
+              Copy Text Summary
+            </Button>
           </TabsContent>
           
-          <TabsContent value="rich" className="mt-0">
-            <div className="mb-4 overflow-auto rounded-md bg-muted p-4">
-              <pre className="text-sm whitespace-pre-wrap">
-                {Object.entries(topicGroups).map(([topic, topicLinks], i) => (
-                  <React.Fragment key={topic}>
-                    <div className="font-semibold">{topic}</div>
-                    {topicLinks.map((link, j) => (
-                      <div key={link.id} className="ml-4">
-                        {link.title}: {link.url}
-                      </div>
-                    ))}
-                    {i < Object.keys(topicGroups).length - 1 && <div className="my-2" />}
-                  </React.Fragment>
-                ))}
-              </pre>
-            </div>
+          <TabsContent value="html" className="space-y-4">
+            <ScrollArea className="h-[300px] rounded-md border">
+              <div className="p-4 bg-secondary/40 font-mono text-sm overflow-x-auto whitespace-pre-wrap">
+                {htmlSummary}
+              </div>
+            </ScrollArea>
+            <Button 
+              onClick={() => copyToClipboard(htmlSummary, 'HTML summary')}
+              className="w-full transition-all hover:bg-primary/90"
+            >
+              Copy HTML Summary
+            </Button>
           </TabsContent>
         </Tabs>
-        
-        <Button 
-          onClick={handleCopy}
-          variant="secondary"
-          className="w-full"
-        >
-          <Copy className="mr-2 h-4 w-4" />
-          Copy to Clipboard
-        </Button>
       </CardContent>
     </Card>
   );

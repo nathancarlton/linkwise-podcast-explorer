@@ -27,26 +27,14 @@ export const validateTopicLinks = async (
     }
     
     try {
-      // Check if this is a Google search fallback URL
-      const isGoogleSearch = link.url.startsWith('https://www.google.com/search?q=');
+      // Skip links from domains to avoid
+      const linkDomain = new URL(link.url).hostname.replace('www.', '');
+      const shouldSkip = domainsToAvoid.some(domain => 
+        linkDomain === domain || linkDomain.endsWith('.' + domain)
+      );
       
-      // Skip links from domains to avoid (unless it's a Google search fallback)
-      if (!isGoogleSearch) {
-        const linkDomain = new URL(link.url).hostname.replace('www.', '');
-        const shouldSkip = domainsToAvoid.some(domain => 
-          linkDomain === domain || linkDomain.endsWith('.' + domain)
-        );
-        
-        if (shouldSkip) {
-          console.warn(`Skipping link from domain to avoid: ${linkDomain}`);
-          continue;
-        }
-      }
-      
-      // Allow Google search URLs to pass through without validation
-      // They're our fallback when no valid links are found
-      if (isGoogleSearch) {
-        validatedLinks.push(link);
+      if (shouldSkip) {
+        console.warn(`Skipping link from domain to avoid: ${linkDomain}`);
         continue;
       }
       
@@ -61,16 +49,6 @@ export const validateTopicLinks = async (
     } catch (urlError) {
       console.warn(`Invalid URL format: ${link.url}`);
     }
-  }
-  
-  // If no valid links were found, add a Google search fallback
-  if (validatedLinks.length === 0 && topic.topic) {
-    const googleSearchUrl = `https://www.google.com/search?q=${encodeURIComponent(topic.topic)}`;
-    validatedLinks.push({
-      url: googleSearchUrl,
-      title: `Search for ${topic.topic}`,
-      description: `No valid links found. Search for information about ${topic.topic}.`
-    });
   }
   
   return validatedLinks;

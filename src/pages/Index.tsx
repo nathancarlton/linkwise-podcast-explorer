@@ -1,7 +1,7 @@
 
 import React, { useEffect } from 'react';
-// import { Link } from 'react-router-dom';
-// import { Beaker } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { Beaker } from 'lucide-react';
 
 import TranscriptInput from '@/components/TranscriptInput';
 import LinksList from '@/components/LinksList';
@@ -50,14 +50,12 @@ const Index = () => {
           Extract meaningful topics and generate authoritative links from your podcast transcripts.
           Perfect for show notes and resource pages.
         </p>
-        {/* Advanced testing tools hidden for now
         <div className="mt-4">
           <Link to="/tester" className="text-sm flex items-center justify-center gap-1 text-muted-foreground hover:text-foreground transition-colors">
             <Beaker className="h-4 w-4" /> 
             Advanced Testing Tools
           </Link>
         </div>
-        */}
       </header>
       
       <main className="w-full max-w-4xl">
