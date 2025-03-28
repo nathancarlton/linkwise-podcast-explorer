@@ -49,7 +49,7 @@ const TranscriptInput: React.FC<TranscriptInputProps> = ({
   const [transcript, setTranscript] = useState('');
   const [wordCount, setWordCount] = useState(0);
   const [topicCount, setTopicCount] = useState(5);
-  const [domainsToAvoid, setDomainsToAvoid] = useState<string[]>(['example.com']);
+  const [domainsToAvoid, setDomainsToAvoid] = useState<string[]>(['wikipedia.org', 'amazon.com', 'automationxai.com']);
   const [newDomain, setNewDomain] = useState('');
   
   const handleTextChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
