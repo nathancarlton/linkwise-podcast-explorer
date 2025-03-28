@@ -31,6 +31,7 @@ export const processTranscript = async (
   try {
     // Clamp topic count between 1-10
     const safeTopicCount = Math.max(1, Math.min(10, topicCount));
+    console.log('Safe topic count after clamping:', safeTopicCount);
     
     // Build the list of topics to avoid as a formatted string
     const topicsToAvoidStr = topicsToAvoid.length > 0 
@@ -50,7 +51,7 @@ export const processTranscript = async (
             role: 'system',
             content: `You are an expert podcast transcript analyst designed to extract the most relevant, useful, important, focused, and specific topics from podcast transcripts. 
               
-Extract exactly ${safeTopicCount} topics from the transcript provided.
+Extract EXACTLY ${safeTopicCount} topics from the transcript provided. You MUST return exactly ${safeTopicCount} topics, no more and no less.
 
 Guidelines:
 - If the topic is a concept, be extremely specific, based on the podcast transcript - e.g., "The impact of quantum computing on cryptography" instead of just "Quantum computing"
@@ -72,11 +73,13 @@ The "topic" is the specific topic name, and "context" is a brief sentence explai
           },
           {
             role: 'user',
-            content: `Extract the ${safeTopicCount} most important and specific topics from this podcast transcript, focusing on concepts, techniques, books, products, people or organizations discussed in detail. 
+            content: `Extract EXACTLY ${safeTopicCount} most important and specific topics from this podcast transcript, focusing on concepts, techniques, books, products, people or organizations discussed in detail. 
             
 ALWAYS capture SPECIFIC BOOK TITLES with their AUTHORS when mentioned, using the format "[Book Title] by [Author Name]" - not just general categories about books.
 
 ${topicsToAvoidStr}
+
+You MUST return EXACTLY ${safeTopicCount} topics - no more, no less.
 
 Provide each topic as a concise 1-10 word phrase paired with a brief context sentence explaining its significance.
 
@@ -123,7 +126,9 @@ Transcript: ${transcript}`
         return { topics: [], usedMockData: false };
       }
       
+      console.log('Extracted topics count:', extractedTopics.length, 'of', safeTopicCount, 'requested');
       console.log('Extracted topics:', extractedTopics);
+      
       return { topics: extractedTopics, usedMockData: false };
     } catch (parseError) {
       console.error('Error parsing OpenAI response:', parseError);
