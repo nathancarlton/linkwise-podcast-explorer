@@ -12,8 +12,15 @@ import TopicAddList from './TopicAddList';
 import { Slider } from '@/components/ui/slider';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 
+{/* removed // , topicsToAdd: string[] */}
+{/* also removed // topicsToAdd: string[];
+  onAddTopicToAdd: (e: React.FormEvent) => void;
+  onRemoveTopicToAdd: (topic: string) => void;
+  newTopicToAdd: string;
+  setNewTopicToAdd: (topic: string) => void; */}
+
 interface TranscriptInputProps {
-  onProcess: (transcript: string, topicCount: number, domainsToAvoid: string[], topicsToAvoid: string[]) => void; {/* removed // , topicsToAdd: string[] */}
+  onProcess: (transcript: string, topicCount: number, domainsToAvoid: string[], topicsToAvoid: string[]) => void; 
   processingStage: ProcessingStage;
   hasApiKey?: boolean;
   topicsToAvoid: string[];
@@ -21,12 +28,13 @@ interface TranscriptInputProps {
   onRemoveTopicToAvoid: (topic: string) => void;
   newTopicToAvoid: string;
   setNewTopicToAvoid: (topic: string) => void;
-  {/* removed // topicsToAdd: string[];
-  onAddTopicToAdd: (e: React.FormEvent) => void;
-  onRemoveTopicToAdd: (topic: string) => void;
-  newTopicToAdd: string;
-  setNewTopicToAdd: (topic: string) => void; */}
 }
+
+  {/* removed // topicsToAdd, 
+  onAddTopicToAdd,
+  onRemoveTopicToAdd,
+  newTopicToAdd,
+  setNewTopicToAdd */}
 
 const TranscriptInput: React.FC<TranscriptInputProps> = ({ 
   onProcess, 
@@ -37,11 +45,6 @@ const TranscriptInput: React.FC<TranscriptInputProps> = ({
   onRemoveTopicToAvoid,
   newTopicToAvoid,
   setNewTopicToAvoid
-  {/* removed // topicsToAdd, 
-  onAddTopicToAdd,
-  onRemoveTopicToAdd,
-  newTopicToAdd,
-  setNewTopicToAdd */}
 }) => {
   const [transcript, setTranscript] = useState('');
   const [wordCount, setWordCount] = useState(0);
@@ -56,9 +59,11 @@ const TranscriptInput: React.FC<TranscriptInputProps> = ({
     setWordCount(words);
   };
 
+  {/* Removed // , topicsToAdd */}
+  
   const handleProcess = () => {
     if (transcript.trim().length > 0) {
-      onProcess(transcript, topicCount, domainsToAvoid, topicsToAvoid); {/* Removed // , topicsToAdd */}
+      onProcess(transcript, topicCount, domainsToAvoid, topicsToAvoid); 
     }
   };
   

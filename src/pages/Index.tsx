@@ -56,9 +56,15 @@ const Index = () => {
       <main className="w-full max-w-4xl">
         <ApiKeyInput onApiKeySave={handleApiKeySave} />
         
+          {/* Removed topicsToAdd topicsToAdd={topicsToAdd}
+          onAddTopicToAdd={handleAddTopicToAdd}
+          onRemoveTopicToAdd={handleRemoveTopicToAdd}
+          newTopicToAdd={newTopicToAdd}
+          setNewTopicToAdd={setNewTopicToAdd} */}
+
         <TranscriptInput 
-          onProcess={(transcript, topicCount, domainsToAvoid, topicsToAvoid) => {/* Removed topicsToAdd */}
-            handleProcessTranscript(transcript, topicCount, domainsToAvoid, topicsToAvoid)} {/* Removed topicsToAdd */}
+          onProcess={(transcript, topicCount, domainsToAvoid, topicsToAvoid) => 
+            handleProcessTranscript(transcript, topicCount, domainsToAvoid, topicsToAvoid)} 
           processingStage={processingStage}
           hasApiKey={hasValidApiKey}
           topicsToAvoid={topicsToAvoid}
@@ -66,11 +72,6 @@ const Index = () => {
           onRemoveTopicToAvoid={handleRemoveTopicToAvoid}
           newTopicToAvoid={newTopicToAvoid}
           setNewTopicToAvoid={setNewTopicToAvoid}
-          {/* Removed topicsToAdd topicsToAdd={topicsToAdd}
-          onAddTopicToAdd={handleAddTopicToAdd}
-          onRemoveTopicToAdd={handleRemoveTopicToAdd}
-          newTopicToAdd={newTopicToAdd}
-          setNewTopicToAdd={setNewTopicToAdd} */}
         />
         
         {topics.length > 0 && (
