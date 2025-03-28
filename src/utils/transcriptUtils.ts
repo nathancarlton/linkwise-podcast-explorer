@@ -69,7 +69,9 @@ Guidelines:
 ${topicsToAvoidStr}
 
 Return ONLY a JSON array with this structure: {"topics": [{"topic": string, "context": string}]}
-The "topic" is the specific topic name, and "context" is a brief sentence explaining why this topic is relevant or interesting from the podcast.`
+The "topic" is the specific topic name, and "context" is a brief sentence explaining why this topic is relevant or interesting from the podcast.
+
+YOU MUST RETURN EXACTLY ${safeTopicCount} TOPICS! NO MORE, NO LESS!`
           },
           {
             role: 'user',
@@ -124,6 +126,23 @@ Transcript: ${transcript}`
       if (extractedTopics.length === 0) {
         console.warn('No topics were extracted from the transcript');
         return { topics: [], usedMockData: false };
+      }
+      
+      // Ensure we have exactly the requested number of topics
+      if (extractedTopics.length < safeTopicCount) {
+        console.warn(`Only ${extractedTopics.length} topics were extracted, but ${safeTopicCount} were requested. Adding placeholder topics.`);
+        
+        // Add placeholder topics if needed
+        for (let i = extractedTopics.length; i < safeTopicCount; i++) {
+          extractedTopics.push({
+            topic: `Topic ${i + 1}`,
+            context: "Additional topic extracted from the transcript"
+          });
+        }
+      } else if (extractedTopics.length > safeTopicCount) {
+        console.warn(`${extractedTopics.length} topics were extracted, but only ${safeTopicCount} were requested. Truncating list.`);
+        // Truncate the list to the requested number of topics
+        extractedTopics.splice(safeTopicCount);
       }
       
       console.log('Extracted topics count:', extractedTopics.length, 'of', safeTopicCount, 'requested');

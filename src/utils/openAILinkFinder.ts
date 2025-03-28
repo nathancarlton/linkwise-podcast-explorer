@@ -263,12 +263,17 @@ export const findLinksWithOpenAI = async (
         if (topicData.links.length > 0) {
           processedTopics.push(topicData);
         } else {
-          // Add topics with no links to maintain topic count
-          processedTopics.push({
-            topic: topicData.topic,
-            context: topicData.context,
-            links: []
+          // For topics with no links, add a placeholder link
+          const topicName = topicData.topic;
+          const placeholderUrl = `https://www.google.com/search?q=${encodeURIComponent(topicName)}`;
+          
+          topicData.links.push({
+            url: placeholderUrl,
+            title: `Search for ${topicName}`,
+            description: `No specific resource found. Search for information about ${topicName}.`
           });
+          
+          processedTopics.push(topicData);
         }
       }
     }
@@ -353,19 +358,35 @@ export const findLinksWithOpenAI = async (
       }
     }
     
-    // For topics with no links found, return them anyway with an empty links array
-    topicsFormatted.forEach(topic => {
-      const topicName = topic.topic.replace(/,$/, '').trim();
-      const existingTopic = processedTopics.find(pt => pt.topic.toLowerCase() === topicName.toLowerCase());
+    // For topics with no links, add a placeholder Google search link
+    for (const [topicKey, topicData] of topicMap.entries()) {
+      // Check if this topic is already in processedTopics
+      const existingTopic = processedTopics.find(pt => pt.topic.toLowerCase() === topicData.topic.toLowerCase());
       
       if (!existingTopic) {
+        // Topic not found in processed topics, add it with a placeholder link
+        const placeholderUrl = `https://www.google.com/search?q=${encodeURIComponent(topicData.topic)}`;
+        
         processedTopics.push({
-          topic: topicName,
-          context: topic.context || '',
-          links: []
+          topic: topicData.topic,
+          context: topicData.context || '',
+          links: [{
+            url: placeholderUrl,
+            title: `Search for ${topicData.topic}`,
+            description: `Information about ${topicData.topic}`
+          }]
+        });
+      } else if (existingTopic.links.length === 0) {
+        // Topic found but has no links, add a placeholder link
+        const placeholderUrl = `https://www.google.com/search?q=${encodeURIComponent(existingTopic.topic)}`;
+        
+        existingTopic.links.push({
+          url: placeholderUrl,
+          title: `Search for ${existingTopic.topic}`,
+          description: `Information about ${existingTopic.topic}`
         });
       }
-    });
+    }
     
     console.log('Extracted links:', processedTopics);
     return { processedTopics, usedMockData: false };
