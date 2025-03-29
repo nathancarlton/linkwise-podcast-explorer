@@ -66,9 +66,8 @@ export const processAPIResponse = async (
           context: topic.context || '',
           links: validatedLinks
         });
-        } else {
-          console.warn(`No valid links for topic "${topic.topic}" after validation`);
-        }
+      } else {
+        console.warn(`No valid links for topic "${topic.topic}" after validation`);
       }
     }
     
