@@ -2,20 +2,23 @@
 import { findLinksForTopics } from './linkFinder';
 import { processTranscript } from './transcriptProcessor';
 import { v4 as uuidv4 } from 'uuid';
-import { LinkItem, ProcessedTopic } from '../types';
+import { LinkItem, ProcessedTopic, SearchApiType } from '../types';
 
 /**
  * Test utility to isolate and test the link search functionality
  * 
  * @param topics - Array of topics to search links for
- * @param apiKey - OpenAI API key
+ * @param apiKey - API key
+ * @param searchApi - Which search API to use
  * @returns Promise resolving to an array of LinkItem objects
  */
 export const testLinkSearch = async (
   topics: string[],
-  apiKey?: string
+  apiKey?: string,
+  searchApi: SearchApiType = SearchApiType.OpenAI
 ): Promise<LinkItem[]> => {
   console.log('Testing link search for topics:', topics);
+  console.log('Using search API:', searchApi);
   
   try {
     if (!apiKey) {
@@ -24,7 +27,7 @@ export const testLinkSearch = async (
     }
 
     // Call findLinksForTopics directly with the provided topics
-    const { processedTopics } = await findLinksForTopics(topics, apiKey);
+    const { processedTopics } = await findLinksForTopics(topics, apiKey, [], searchApi);
     
     console.log('Found processed topics:', processedTopics);
     
@@ -59,17 +62,20 @@ export const testLinkSearch = async (
  * Test utility to run the full process from transcript to links
  * 
  * @param transcript - Transcript text to process
- * @param apiKey - OpenAI API key
+ * @param apiKey - API key
+ * @param searchApi - Which search API to use
  * @returns Promise resolving to an array of LinkItem objects
  */
 export const testFullProcess = async (
   transcript: string,
-  apiKey?: string
+  apiKey?: string,
+  searchApi: SearchApiType = SearchApiType.OpenAI
 ): Promise<{
   topics: string[],
   links: LinkItem[]
 }> => {
   console.log('Testing full process with transcript length:', transcript.length);
+  console.log('Using search API:', searchApi);
   
   try {
     if (!apiKey) {
@@ -88,7 +94,7 @@ export const testFullProcess = async (
     }
     
     // Then find links for those topics
-    const { processedTopics } = await findLinksForTopics(topics, apiKey);
+    const { processedTopics } = await findLinksForTopics(topics, apiKey, [], searchApi);
     
     console.log('Found processed topics:', processedTopics);
     

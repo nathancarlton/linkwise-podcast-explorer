@@ -31,3 +31,8 @@ export interface TopicItem {
   context?: string;
   checked: boolean;
 }
+
+export enum SearchApiType {
+  OpenAI = 'openai',
+  Brave = 'brave'
+}
