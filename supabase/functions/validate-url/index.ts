@@ -2,7 +2,6 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.7";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { corsHeaders } from "./cors.ts";
-import { checkUrlCache, storeUrlCache } from "./cache.ts";
 import { deepValidateUrl } from "./validation.ts";
 
 // Initialize the Supabase client
@@ -22,7 +21,7 @@ serve(async (req) => {
   try {
     // Parse request body
     const body = await req.json();
-    const { url, deepValidation = false, forceCheck = false } = body;
+    const { url, deepValidation = false } = body;
     
     if (!url) {
       return new Response(
@@ -31,39 +30,17 @@ serve(async (req) => {
       );
     }
     
-    // Check cache first, but skip if deep validation or force check is requested
-    if (!forceCheck) {
-      const cachedResult = await checkUrlCache(url, forceCheck, supabase);
-      if (cachedResult) {
-        console.log(`Cache hit for URL: ${url}`);
-        return new Response(
-          JSON.stringify({ 
-            isValid: cachedResult.is_valid, 
-            metadata: cachedResult.metadata,
-            fromCache: true 
-          }),
-          { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
-      }
-    }
+    console.log(`Validating URL: ${url}...`);
     
-    console.log(`Cache miss or forced check for URL: ${url}, validating...`);
-    
-    // Perform deep content validation
+    // Perform deep content validation (always fresh, no cache)
     const validationResult = await deepValidateUrl(url);
-    
-    // Store result in cache unless cache busting is requested
-    if (!forceCheck) {
-      await storeUrlCache(url, validationResult.isValid, validationResult.metadata, supabase);
-    }
     
     return new Response(
       JSON.stringify({ 
         isValid: validationResult.isValid, 
         metadata: validationResult.metadata, 
         fromCache: false,
-        deepValidation: deepValidation,
-        forceCheck: forceCheck
+        deepValidation: deepValidation
       }),
       { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
