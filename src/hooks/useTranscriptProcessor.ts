@@ -6,7 +6,11 @@ import { hashString } from '@/utils/hashUtils';
 import { processTopicsToLinkItems } from '@/utils/linkProcessingUtils';
 import { transcriptService } from '@/services/transcriptService';
 
-export const useTranscriptProcessor = (openAIApiKey: string, braveApiKey?: string, selectedSearchApi: SearchApiType = SearchApiType.OpenAI) => {
+export const useTranscriptProcessor = (
+  openAIApiKey: string, 
+  braveApiKey?: string, 
+  selectedSearchApi: SearchApiType = SearchApiType.OpenAI
+) => {
   const [processingStage, setProcessingStage] = useState<ProcessingStage>(ProcessingStage.Initial);
   const [links, setLinks] = useState<LinkItem[]>([]);
   const [topics, setTopics] = useState<TopicItem[]>([]);
@@ -20,11 +24,18 @@ export const useTranscriptProcessor = (openAIApiKey: string, braveApiKey?: strin
     topicsToAvoid: string[]
   ) => {
     try {
-      // Determine which API key to use
-      const apiKey = selectedSearchApi === SearchApiType.OpenAI ? openAIApiKey : braveApiKey;
+      // Determine which API key to use for link search
+      const searchApiKey = selectedSearchApi === SearchApiType.OpenAI ? openAIApiKey : braveApiKey;
       
-      if (!apiKey) {
-        toast.error(`No ${selectedSearchApi} API key provided`);
+      // We always need OpenAI API key for topic extraction
+      if (!openAIApiKey) {
+        toast.error('No OpenAI API key provided for topic extraction');
+        return;
+      }
+      
+      // Check if we have a valid API key for the selected search service
+      if (!searchApiKey) {
+        toast.error(`No ${selectedSearchApi} API key provided for link searching`);
         return;
       }
       
@@ -66,7 +77,7 @@ export const useTranscriptProcessor = (openAIApiKey: string, braveApiKey?: strin
       setProcessingStage(ProcessingStage.FindingLinks);
       const { processedTopics } = await transcriptService.findLinks(
         allTopics,
-        apiKey,
+        searchApiKey,
         domainsToAvoid,
         selectedSearchApi
       );

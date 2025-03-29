@@ -8,14 +8,24 @@ import LinksList from '@/components/LinksList';
 import LinkSummary from '@/components/LinkSummary';
 import TopicList from '@/components/TopicList';
 import ApiKeyInput from '@/components/ApiKeyInput';
+import BraveApiKeyInput from '@/components/BraveApiKeyInput';
+import SearchApiToggle from '@/components/SearchApiToggle';
 
 import { useApiKey } from '@/hooks/useApiKey';
 import { useTopicsManager } from '@/hooks/useTopicsManager';
 import { useTranscriptProcessor } from '@/hooks/useTranscriptProcessor';
-import { ProcessingStage } from '@/types';
+import { ProcessingStage, SearchApiType } from '@/types';
 
 const Index = () => {
-  const { apiKey, handleApiKeySave, hasValidApiKey } = useApiKey();
+  const { 
+    openAIApiKey, 
+    braveApiKey, 
+    selectedSearchApi, 
+    handleApiKeySave, 
+    handleSearchApiChange, 
+    hasValidOpenAIApiKey,
+    hasValidBraveApiKey 
+  } = useApiKey();
   
   const { 
     topicsToAvoid, newTopicToAvoid, setNewTopicToAvoid,
@@ -29,7 +39,7 @@ const Index = () => {
     handleProcessTranscript,
     handleLinkToggle,
     handleTopicToggle
-  } = useTranscriptProcessor(apiKey);
+  } = useTranscriptProcessor(openAIApiKey, braveApiKey, selectedSearchApi);
 
   // Add fade effect when component mounts
   useEffect(() => {
@@ -51,13 +61,21 @@ const Index = () => {
       </header>
       
       <main className="w-full max-w-4xl">
-        <ApiKeyInput onApiKeySave={handleApiKeySave} />
+        <ApiKeyInput onApiKeySave={(key) => handleApiKeySave(key, 'openai')} />
+        <BraveApiKeyInput onApiKeySave={(key) => handleApiKeySave(key, 'brave')} />
+        
+        <SearchApiToggle 
+          selectedApi={selectedSearchApi} 
+          onToggle={handleSearchApiChange}
+          disabled={processingStage === ProcessingStage.ProcessingTranscript || processingStage === ProcessingStage.FindingLinks}
+        />
         
         <TranscriptInput 
           onProcess={(transcript, topicCount, domainsToAvoid, topicsToAvoid) => 
             handleProcessTranscript(transcript, topicCount, domainsToAvoid, topicsToAvoid)} 
           processingStage={processingStage}
-          hasApiKey={hasValidApiKey}
+          hasApiKey={selectedSearchApi === SearchApiType.OpenAI ? hasValidOpenAIApiKey : hasValidBraveApiKey}
+          selectedApi={selectedSearchApi}
           topicsToAvoid={topicsToAvoid}
           onAddTopicToAvoid={handleAddTopicToAvoid}
           onRemoveTopicToAvoid={handleRemoveTopicToAvoid}
@@ -81,8 +99,6 @@ const Index = () => {
             <LinkSummary links={links} />
           </>
         )}
-        
-        {/* Removing debug section that references undefined rawResponse */}
       </main>
       
       <footer className="mt-12 text-center text-sm text-muted-foreground animate-fade-in">

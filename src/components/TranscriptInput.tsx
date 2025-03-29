@@ -4,25 +4,18 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { ProcessingStage } from '@/types';
+import { ProcessingStage, SearchApiType } from '@/types';
 import { Loader2, X, Plus, AlertTriangle } from 'lucide-react';
 import DomainAvoidList from './DomainAvoidList';
 import TopicAvoidList from './TopicAvoidList';
-import TopicAddList from './TopicAddList';
 import { Slider } from '@/components/ui/slider';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-
-{/* removed // , topicsToAdd: string[] */}
-{/* also removed // topicsToAdd: string[];
-  onAddTopicToAdd: (e: React.FormEvent) => void;
-  onRemoveTopicToAdd: (topic: string) => void;
-  newTopicToAdd: string;
-  setNewTopicToAdd: (topic: string) => void; */}
 
 interface TranscriptInputProps {
   onProcess: (transcript: string, topicCount: number, domainsToAvoid: string[], topicsToAvoid: string[]) => void; 
   processingStage: ProcessingStage;
   hasApiKey?: boolean;
+  selectedApi?: SearchApiType;
   topicsToAvoid: string[];
   onAddTopicToAvoid: (e: React.FormEvent) => void;
   onRemoveTopicToAvoid: (topic: string) => void;
@@ -30,16 +23,11 @@ interface TranscriptInputProps {
   setNewTopicToAvoid: (topic: string) => void;
 }
 
-  {/* removed // topicsToAdd, 
-  onAddTopicToAdd,
-  onRemoveTopicToAdd,
-  newTopicToAdd,
-  setNewTopicToAdd */}
-
 const TranscriptInput: React.FC<TranscriptInputProps> = ({ 
   onProcess, 
   processingStage,
   hasApiKey = false,
+  selectedApi = SearchApiType.OpenAI,
   topicsToAvoid,
   onAddTopicToAvoid,
   onRemoveTopicToAvoid,
@@ -58,8 +46,6 @@ const TranscriptInput: React.FC<TranscriptInputProps> = ({
     const words = value.trim() ? value.trim().split(/\s+/).length : 0;
     setWordCount(words);
   };
-
-  {/* Removed // , topicsToAdd */}
   
   const handleProcess = () => {
     if (transcript.trim().length > 0) {
@@ -94,6 +80,7 @@ const TranscriptInput: React.FC<TranscriptInputProps> = ({
     processingStage === ProcessingStage.ProcessingTranscript || 
     processingStage === ProcessingStage.FindingLinks;
 
+  const apiName = selectedApi === SearchApiType.OpenAI ? 'OpenAI' : 'Brave';
   const showApiKeyNeededAlert = !hasApiKey && transcript.trim().length > 0;
 
   return (
@@ -111,7 +98,7 @@ const TranscriptInput: React.FC<TranscriptInputProps> = ({
           <Alert variant="warning" className="mb-4">
             <AlertTriangle className="h-4 w-4" />
             <AlertDescription>
-              You will need to enter an OpenAI API key in the settings above to process transcripts and find links.
+              You need to enter a valid {apiName} API key to process transcripts and find links.
             </AlertDescription>
           </Alert>
         )}
@@ -161,15 +148,6 @@ const TranscriptInput: React.FC<TranscriptInputProps> = ({
             onAdd={onAddTopicToAvoid}
             disabled={isDisabled}
           />
-          
-          {/* Removing <TopicAddList 
-            topics={topicsToAdd}
-            onRemove={onRemoveTopicToAdd}
-            newTopic={newTopicToAdd}
-            setNewTopic={setNewTopicToAdd}
-            onAdd={onAddTopicToAdd}
-            disabled={isDisabled}
-          /> */}
         </div>
       </CardContent>
       <CardFooter className="flex justify-end">
@@ -184,7 +162,7 @@ const TranscriptInput: React.FC<TranscriptInputProps> = ({
               <span>
                 {processingStage === ProcessingStage.ProcessingTranscript
                   ? 'Finding Topics'
-                  : 'Generating Links'}
+                  : `Generating Links with ${apiName}`}
               </span>
             </div>
           ) : (
