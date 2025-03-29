@@ -21,9 +21,6 @@ const Index = () => {
     topicsToAvoid, newTopicToAvoid, setNewTopicToAvoid,
     handleAddTopicToAvoid, handleRemoveTopicToAvoid
   } = useTopicsManager();
-  
-    {/*Removed from above const ^^^ /* topicsToAdd, newTopicToAdd, setNewTopicToAdd,
-    handleAddTopicToAdd, handleRemoveTopicToAdd */}
 
   const {
     processingStage,
@@ -56,12 +53,6 @@ const Index = () => {
       <main className="w-full max-w-4xl">
         <ApiKeyInput onApiKeySave={handleApiKeySave} />
         
-          {/* Removed topicsToAdd topicsToAdd={topicsToAdd}
-          onAddTopicToAdd={handleAddTopicToAdd}
-          onRemoveTopicToAdd={handleRemoveTopicToAdd}
-          newTopicToAdd={newTopicToAdd}
-          setNewTopicToAdd={setNewTopicToAdd} */}
-
         <TranscriptInput 
           onProcess={(transcript, topicCount, domainsToAvoid, topicsToAvoid) => 
             handleProcessTranscript(transcript, topicCount, domainsToAvoid, topicsToAvoid)} 
@@ -90,16 +81,8 @@ const Index = () => {
             <LinkSummary links={links} />
           </>
         )}
-
-        {/* Debug: Raw API Response */}
-        {rawResponse && (
-          <div className="mt-6">
-            <h2 className="text-lg font-bold mb-2">Debug: Raw Response</h2>
-            <pre className="bg-gray-100 p-4 rounded text-sm max-h-60 overflow-auto">
-              {JSON.stringify(rawResponse, null, 2)}
-            </pre>
-          </div>
-        )}
+        
+        {/* Removing debug section that references undefined rawResponse */}
       </main>
       
       <footer className="mt-12 text-center text-sm text-muted-foreground animate-fade-in">
